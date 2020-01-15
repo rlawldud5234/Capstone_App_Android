@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">proto1</string>
+    <string-array name="favorite_item">
+        <item>User1</item>
+        <item>User2</item>
+    </string-array>
+</resources>

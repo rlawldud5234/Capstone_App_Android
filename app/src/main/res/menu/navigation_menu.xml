@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_guide"
+        android:icon="@android:drawable/ic_dialog_map"
+        android:title="GUIDE" />
+    <item
+        android:id="@+id/menu_home"
+        android:icon="@drawable/common_google_signin_btn_icon_dark"
+        android:title="HOME" />
+    <item
+        android:id="@+id/menu_setting"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="SETTING" />
+</menu>
