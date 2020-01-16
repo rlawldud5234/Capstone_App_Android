@@ -55,49 +55,49 @@
         app:layout_constraintTop_toBottomOf="@id/btnIdRefresh" />
 
 
-    <TextView
-        android:id="@+id/tvwIdPitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:text="피치"
-        android:textSize="23sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+<!--    <TextView-->
+<!--        android:id="@+id/tvwIdPitch"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginStart="24dp"-->
+<!--        android:layout_marginTop="24dp"-->
+<!--        android:text="피치"-->
+<!--        android:textSize="23sp"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/textView" />-->
 
-    <SeekBar
-        android:id="@+id/sbrIdPitch"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintBottom_toBottomOf="@id/tvwIdPitch"
-        app:layout_constraintStart_toEndOf="@id/tvwIdPitch"
-        app:layout_constraintTop_toTopOf="@id/tvwIdPitch" />
+<!--    <SeekBar-->
+<!--        android:id="@+id/sbrIdPitch"-->
+<!--        android:layout_width="100dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="8dp"-->
+<!--        android:layout_marginStart="8dp"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="@id/tvwIdPitch"-->
+<!--        app:layout_constraintStart_toEndOf="@id/tvwIdPitch"-->
+<!--        app:layout_constraintTop_toTopOf="@id/tvwIdPitch" />-->
 
-    <TextView
-        android:id="@+id/tvwIdSpeakRate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:text="속도"
-        android:textSize="23sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvwIdPitch" />
+<!--    <TextView-->
+<!--        android:id="@+id/tvwIdSpeakRate"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginStart="24dp"-->
+<!--        android:layout_marginTop="24dp"-->
+<!--        android:text="속도"-->
+<!--        android:textSize="23sp"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/tvwIdPitch" />-->
 
-    <SeekBar
-        android:id="@+id/sbrIdSpeakRate"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintBottom_toBottomOf="@id/tvwIdSpeakRate"
-        app:layout_constraintStart_toEndOf="@id/tvwIdSpeakRate"
-        app:layout_constraintTop_toTopOf="@id/tvwIdSpeakRate" />
+<!--    <SeekBar-->
+<!--        android:id="@+id/sbrIdSpeakRate"-->
+<!--        android:layout_width="100dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="8dp"-->
+<!--        android:layout_marginStart="8dp"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="@id/tvwIdSpeakRate"-->
+<!--        app:layout_constraintStart_toEndOf="@id/tvwIdSpeakRate"-->
+<!--        app:layout_constraintTop_toTopOf="@id/tvwIdSpeakRate" />-->
 
 
     <Button

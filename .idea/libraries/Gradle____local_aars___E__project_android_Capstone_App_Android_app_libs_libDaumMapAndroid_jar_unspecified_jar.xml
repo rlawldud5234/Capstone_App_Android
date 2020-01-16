@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: __local_aars__:E.\project\android\Capstone_App_Android\app\libs\libDaumMapAndroid.jar:unspecified@jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/libs/libDaumMapAndroid.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

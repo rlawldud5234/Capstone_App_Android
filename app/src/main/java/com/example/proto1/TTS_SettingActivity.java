@@ -12,7 +12,6 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
-
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -20,8 +19,8 @@ public class TTS_SettingActivity extends AppCompatActivity {
     TextToSpeech tts;
 
     private EditText mEditText;
-    private SeekBar mSeekBarPitch;
-    private SeekBar mSeekBarSpeakRate;
+//    private SeekBar mSeekBarPitch;
+//    private SeekBar mSeekBarSpeakRate;
     private Button mButtonSpeak;
     private Button mButtonRefresh;
     private RadioGroup lang_list;
@@ -47,7 +46,7 @@ public class TTS_SettingActivity extends AppCompatActivity {
         mButtonSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                setSpeack();
+//                setSpeack();
                 changeLang();
                 String text = mEditText.getText().toString();
 
@@ -67,8 +66,8 @@ public class TTS_SettingActivity extends AppCompatActivity {
             public void onClick(View view) {
                 lang_list.check(R.id.select_en);
                 mEditText.getText().clear();
-                mSeekBarPitch.setProgress(1);
-                mSeekBarSpeakRate.setProgress(1);
+//                mSeekBarPitch.setProgress(1);
+//                mSeekBarSpeakRate.setProgress(1);
             }
         });
     }
@@ -85,8 +84,8 @@ public class TTS_SettingActivity extends AppCompatActivity {
 
     private void buildViews() {
         mEditText = findViewById(R.id.ettIdText);
-        mSeekBarPitch = findViewById(R.id.sbrIdPitch);
-        mSeekBarSpeakRate = findViewById(R.id.sbrIdSpeakRate);
+//        mSeekBarPitch = findViewById(R.id.sbrIdPitch);
+//        mSeekBarSpeakRate = findViewById(R.id.sbrIdSpeakRate);
         mButtonSpeak = findViewById(R.id.btnIdSpeak);
         mButtonRefresh = findViewById(R.id.btnIdRefresh);
 
@@ -95,28 +94,28 @@ public class TTS_SettingActivity extends AppCompatActivity {
         japanese = findViewById(R.id.select_ja);
         english = findViewById(R.id.select_en);
 
-        mSeekBarPitch.setMax(10);
-        mSeekBarPitch.setProgress(1);
-
-        mSeekBarSpeakRate.setMax(5);
-        mSeekBarSpeakRate.setProgress(1);
+//        mSeekBarPitch.setMax(10);
+//        mSeekBarPitch.setProgress(1);
+//
+//        mSeekBarSpeakRate.setMax(5);
+//        mSeekBarSpeakRate.setProgress(1);
 
         lang_list.check(R.id.select_en);
     }
 
-    private void setSpeack() {
-        float pitch = (float)mSeekBarPitch.getProgress();
-        if (pitch < 0.1) {
-            pitch = 0.1f;
-        }
-        float speed = (float)mSeekBarSpeakRate.getProgress();
-        if (speed < 0.1) {
-            speed = 0.1f;
-        }
-
-        tts.setPitch(pitch);
-        tts.setSpeechRate(speed);
-    }
+//    private void setSpeack() {
+//        float pitch = (float)mSeekBarPitch.getProgress();
+//        if (pitch < 0.1) {
+//            pitch = 0.1f;
+//        }
+//        float speed = (float)mSeekBarSpeakRate.getProgress();
+//        if (speed < 0.1) {
+//            speed = 0.1f;
+//        }
+//
+//        tts.setPitch(pitch);
+//        tts.setSpeechRate(speed);
+//    }
 
     private void changeLang() {
         switch (lang_list.getCheckedRadioButtonId()) {
@@ -124,7 +123,7 @@ public class TTS_SettingActivity extends AppCompatActivity {
                 korean.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        tts.setLanguage(Locale.KOREAN);
+                        tts.setLanguage(Locale.KOREA);
                     }
                 });
                 break;
@@ -133,7 +132,7 @@ public class TTS_SettingActivity extends AppCompatActivity {
                 japanese.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        tts.setLanguage(Locale.JAPANESE);
+                        tts.setLanguage(Locale.JAPAN);
                     }
                 });
                 break;
@@ -142,7 +141,7 @@ public class TTS_SettingActivity extends AppCompatActivity {
                 english.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        tts.setLanguage(Locale.ENGLISH);
+                        tts.setLanguage(Locale.US);
                     }
                 });
                 break;

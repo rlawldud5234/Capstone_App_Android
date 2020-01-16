@@ -7,7 +7,7 @@
         android:title="GUIDE" />
     <item
         android:id="@+id/menu_home"
-        android:icon="@drawable/common_google_signin_btn_icon_dark"
+        android:icon="@drawable/ic_home"
         android:title="HOME" />
     <item
         android:id="@+id/menu_setting"
