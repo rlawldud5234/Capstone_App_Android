@@ -13,6 +13,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class BaseActivity extends AppCompatActivity {
     private FragmentManager fragmentmanager = getSupportFragmentManager();
     private HomeFragment homefragment = new HomeFragment();
+    private GuideFragment guidefragment = new GuideFragment();
     private SettingFragment settingfragment = new SettingFragment();
 
     @Override
@@ -27,8 +28,11 @@ public class BaseActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 FragmentTransaction transaction = fragmentmanager.beginTransaction();
                 switch(menuItem.getItemId()) {
+                    case R.id.menu_guide: {
+                        transaction.replace(R.id.frame_layout, guidefragment).commitAllowingStateLoss();
+                    }
                     case R.id.menu_home: {
-                        transaction.replace(R.id.frame_layout, homefragment).commitAllowingStateLoss();
+                        transaction.replace(R.id.frame_layout, homefragment);
                         break;
                     }
                     case R.id.menu_setting: {

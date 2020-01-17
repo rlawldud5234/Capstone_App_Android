@@ -1,18 +1,11 @@
 package com.example.proto1;
 
-import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.view.View;
-import android.widget.Adapter;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -20,18 +13,12 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import net.daum.mf.map.api.MapPOIItem;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
 
-import java.util.List;
-
-import static android.content.Context.LOCATION_SERVICE;
 
 public class HomeFragment extends Fragment implements MapView.CurrentLocationEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener{
     private String[] ListFav;
@@ -39,6 +26,7 @@ public class HomeFragment extends Fragment implements MapView.CurrentLocationEve
     private ArrayAdapter adapter;
 
     private MapView mapview;
+    private MapReverseGeoCoder reverseGeoCoder = null;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -66,7 +54,8 @@ public class HomeFragment extends Fragment implements MapView.CurrentLocationEve
 
         mapview = (MapView) view.findViewById(R.id.mapView);
         mapview.setCurrentLocationEventListener(this);
-        mapview.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithoutHeading);
+
+        mapview.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithoutHeading);   //현위치 트랙킹 모드 On, 단말의 위치에 따라 지도 중심이 이동한다
 
         return view;
     }
@@ -108,7 +97,7 @@ public class HomeFragment extends Fragment implements MapView.CurrentLocationEve
     }
 
     private void onFinishReverseGeoCoding(String result) {
-//        Toast.makeText(LocationDemoActivity.this, "Reverse Geo-coding : " + result, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), "Reverse Geo-coding : " + result, Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -6,21 +6,23 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.SeekBar;
+import android.widget.Toast;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 public class TTS_SettingActivity extends AppCompatActivity {
     TextToSpeech tts;
 
     private EditText mEditText;
-//    private SeekBar mSeekBarPitch;
-//    private SeekBar mSeekBarSpeakRate;
     private Button mButtonSpeak;
     private Button mButtonRefresh;
     private RadioGroup lang_list;
@@ -34,22 +36,33 @@ public class TTS_SettingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tts_setting);
         buildViews();
 
+        //TTS 객체 생성
         tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
            @Override
            public void onInit(int status) {
-               if(status != TextToSpeech.ERROR) {
-                   tts.setLanguage(Locale.ENGLISH);
+               if(status == TextToSpeech.SUCCESS) {
+                   tts.setLanguage(Locale.KOREA);    //따로 언어 선택 안 해주면 기기 시스템 설정대로 출력
+                   int result = tts.setLanguage(Locale.JAPANESE);
+                   if(result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                       Toast.makeText(getApplicationContext(), "일본어 미지원", Toast.LENGTH_LONG).show();
+                       Intent install = new Intent();
+                       install.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                       startActivity(install);
+                   }
+               } else {
+                   Toast.makeText(getApplicationContext(), "설치 실패", Toast.LENGTH_LONG).show();
                }
            }
         });
 
+        //말하기 버튼 클릭리스너
         mButtonSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                setSpeack();
                 changeLang();
                 String text = mEditText.getText().toString();
 
+                // 안드로이드 버전이 롤리팝 이상일 때와 이하일 때 실행 방식 분리
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     String utteranceId=this.hashCode() + "";
                     tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
@@ -70,15 +83,22 @@ public class TTS_SettingActivity extends AppCompatActivity {
 //                mSeekBarSpeakRate.setProgress(1);
             }
         });
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(tts != null) {
+            tts.stop();     //음성출력 중단
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         if(tts != null) {
-            tts.stop();
-            tts.shutdown();
+            tts.shutdown();     //TTS 엔진 리소스 해제
         }
     }
 
@@ -100,7 +120,7 @@ public class TTS_SettingActivity extends AppCompatActivity {
 //        mSeekBarSpeakRate.setMax(5);
 //        mSeekBarSpeakRate.setProgress(1);
 
-        lang_list.check(R.id.select_en);
+        lang_list.check(R.id.select_ko);
     }
 
 //    private void setSpeack() {
@@ -118,34 +138,42 @@ public class TTS_SettingActivity extends AppCompatActivity {
 //    }
 
     private void changeLang() {
-        switch (lang_list.getCheckedRadioButtonId()) {
-            case R.id.select_ko:
-                korean.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        tts.setLanguage(Locale.KOREA);
-                    }
-                });
-                break;
+        lang_list.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                switch (i) {
+                    case R.id.select_ko:
+                        korean.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                tts.setLanguage(Locale.KOREAN);
+                                Toast.makeText(getApplicationContext(), "한국어 선택", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        break;
 
-            case R.id.select_ja:
-                japanese.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        tts.setLanguage(Locale.JAPAN);
-                    }
-                });
-                break;
+                    case R.id.select_ja:
+                        japanese.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                tts.setLanguage(Locale.JAPANESE);
+                                Toast.makeText(getApplicationContext(), "일본어 선택", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        break;
 
-            case R.id.select_en:
-                english.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        tts.setLanguage(Locale.US);
-                    }
-                });
-                break;
-        }
+                    case R.id.select_en:
+                        english.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                tts.setLanguage(Locale.ENGLISH);
+                                Toast.makeText(getApplicationContext(), "영어 선택", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        break;
+                }
+            }
+        });
     }
 
     @Override

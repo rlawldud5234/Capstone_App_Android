@@ -4,13 +4,13 @@
     <item
         android:id="@+id/menu_guide"
         android:icon="@android:drawable/ic_dialog_map"
-        android:title="GUIDE" />
+        android:title="길 안내" />
     <item
         android:id="@+id/menu_home"
         android:icon="@drawable/ic_home"
-        android:title="HOME" />
+        android:title="메인" />
     <item
         android:id="@+id/menu_setting"
         android:icon="@android:drawable/ic_menu_manage"
-        android:title="SETTING" />
+        android:title="설정" />
 </menu>
