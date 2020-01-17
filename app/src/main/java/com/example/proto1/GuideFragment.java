@@ -22,20 +22,22 @@ import java.util.List;
 public class GuideFragment extends Fragment {
     Location destination;
     NaviOptions options;
-    KakaoNaviParams.Builder builder;
-
     List<Location> viaList = new ArrayList<Location>();
+    KakaoNaviParams.Builder builder;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         destination = Location.newBuilder("카카오 판교 오피스", 127.10821222694533, 37.40205604363057).build();
         options = NaviOptions.newBuilder().setCoordType(CoordType.WGS84).setVehicleType(VehicleType.FIRST).setRpOption(RpOption.SHORTEST).build();
-        builder = KakaoNaviParams.newBuilder(destination).setNaviOptions(options);
-
         viaList.add(Location.newBuilder("서서울호수공원", 126.8322289016308, 37.528495607451205).build());
+        builder = KakaoNaviParams.newBuilder(destination).setNaviOptions(options).setViaList(viaList);
+
+        KakaoNaviParams params = builder.build();
 
         final KakaoNaviParams.Builder builder = KakaoNaviParams.newBuilder(Location.newBuilder("카카오 판교오피스", 127.10821222694533, 37.40205604363057).build()).setNaviOptions(NaviOptions.newBuilder().setCoordType(CoordType.WGS84).setStartX(126.5).setStartY(35.2).build()).setViaList(viaList);
+
         KakaoNaviService.getInstance().navigate(getActivity(), builder.build());
     }
 
