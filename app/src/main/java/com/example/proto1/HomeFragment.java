@@ -1,36 +1,50 @@
 package com.example.proto1;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
-import net.daum.mf.map.api.MapPoint;
-import net.daum.mf.map.api.MapReverseGeoCoder;
-import net.daum.mf.map.api.MapView;
+import com.skt.Tmap.TMapData;
+import com.skt.Tmap.TMapMarkerItem;
+import com.skt.Tmap.TMapPoint;
+import com.skt.Tmap.TMapView;
 
-
-public class HomeFragment extends Fragment implements MapView.CurrentLocationEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener{
+public class HomeFragment extends Fragment {
     private String[] ListFav;
     private ListView listview;
     private ArrayAdapter adapter;
 
-    private MapView mapview;
-    private MapReverseGeoCoder reverseGeoCoder = null;
+    private String app_key;
+    private TMapData tData;
+    private TMapView tmapView;
+    private TMapPoint tPoint;
+    private TMapMarkerItem tItem;
+
+    Button Btnloc;
+
+    private TMapPoint currentpoint;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setGps();
     }
 
     @Nullable
@@ -52,53 +66,59 @@ public class HomeFragment extends Fragment implements MapView.CurrentLocationEve
         listview.setAdapter(adapter);
         adapter.notifyDataSetChanged();
 
-        mapview = (MapView) view.findViewById(R.id.mapView);
-        mapview.setCurrentLocationEventListener(this);
+        Btnloc = (Button)view.findViewById(R.id.share_loc);
 
-        mapview.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithoutHeading);   //현위치 트랙킹 모드 On, 단말의 위치에 따라 지도 중심이 이동한다
+
+        //TMAP 호출
+        LinearLayout linearLayoutTmap = (LinearLayout)view.findViewById(R.id.TMapView);
+        app_key = "l7xxb116f439ac904ca683fb4a533412e093";
+
+        tData = new TMapData();
+
+        tmapView = new TMapView(getActivity());
+        tmapView.setSKTMapApiKey(app_key);linearLayoutTmap.addView(tmapView);
+
+        tmapView.setIconVisibility(true);
+        tmapView.bringMarkerToFront(tItem);
 
         return view;
     }
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mapview.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOff);
-        mapview.setShowCurrentLocationMarker(false);
+
+    //현재 위치
+    private final LocationListener mLocationListener = new LocationListener() {
+        public void onLocationChanged(Location location) {
+            if (location != null) {
+                double latitude = location.getLatitude();
+                double longitude = location.getLongitude();
+                tmapView.setLocationPoint(longitude, latitude);
+                tmapView.setCenterPoint(longitude, latitude);
+
+                currentpoint = new TMapPoint(latitude, longitude);
+            }
+        }
+
+        public void onProviderDisabled(String provider) {
+        }
+
+        public void onProviderEnabled(String provider) {
+        }
+
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+        }
+    };
+
+    //현재위치 받기
+    public void setGps() {
+        final LocationManager lm = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
+        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, // 등록할 위치제공자(실내에선 NETWORK_PROVIDER 권장)
+                1000, // 통지사이의 최소 시간간격 (miliSecond)
+                1, // 통지사이의 최소 변경거리 (m)
+                mLocationListener);
     }
 
-    @Override
-    public void onCurrentLocationUpdate(MapView mapView, MapPoint mapPoint, float v) {
-        MapPoint.GeoCoordinate mapPointGed = mapPoint.getMapPointGeoCoord();
-    }
-
-    @Override
-    public void onCurrentLocationDeviceHeadingUpdate(MapView mapView, float v) {
-
-    }
-
-    @Override
-    public void onCurrentLocationUpdateFailed(MapView mapView) {
-
-    }
-
-    @Override
-    public void onCurrentLocationUpdateCancelled(MapView mapView) {
-
-    }
-
-    @Override
-    public void onReverseGeoCoderFoundAddress(MapReverseGeoCoder mapReverseGeoCoder, String s) {
-        mapReverseGeoCoder.toString();
-        onFinishReverseGeoCoding(s);
-    }
-    @Override
-    public void onReverseGeoCoderFailedToFindAddress(MapReverseGeoCoder mapReverseGeoCoder) {
-        onFinishReverseGeoCoding("Fail");
-    }
-
-    private void onFinishReverseGeoCoding(String result) {
-        Toast.makeText(getActivity(), "Reverse Geo-coding : " + result, Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {

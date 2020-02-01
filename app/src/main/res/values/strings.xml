@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">prototype</string>
-    <string name="my_app_name">prototype</string>
     <string-array name="favorite_item">
         <item>User1</item>
         <item>User2</item>

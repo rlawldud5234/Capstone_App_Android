@@ -13,7 +13,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class BaseActivity extends AppCompatActivity {
     private FragmentManager fragmentmanager = getSupportFragmentManager();
     private HomeFragment homefragment = new HomeFragment();
-    private GuideFragment guidefragment = new GuideFragment();
+    private GuideFragment guideFragment = new GuideFragment();
     private SettingFragment settingfragment = new SettingFragment();
 
     @Override
@@ -21,7 +21,7 @@ public class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_base);
 
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navi);
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomBar);
         bottomNavigationView.setSelectedItemId(R.id.menu_home);
         BottomNavigationView.OnNavigationItemSelectedListener selectedListener = new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -29,14 +29,15 @@ public class BaseActivity extends AppCompatActivity {
                 FragmentTransaction transaction = fragmentmanager.beginTransaction();
                 switch(menuItem.getItemId()) {
                     case R.id.menu_guide: {
-                        transaction.replace(R.id.frame_layout, guidefragment).commitAllowingStateLoss();
+                        transaction.replace(R.id.frame_layout, guideFragment).commit();
+                        break;
                     }
                     case R.id.menu_home: {
-                        transaction.replace(R.id.frame_layout, homefragment);
+                        transaction.replace(R.id.frame_layout, homefragment).commit();
                         break;
                     }
                     case R.id.menu_setting: {
-                        transaction.replace(R.id.frame_layout, settingfragment).commitAllowingStateLoss();
+                        transaction.replace(R.id.frame_layout, settingfragment).commit();
                         break;
                     }
                 }
