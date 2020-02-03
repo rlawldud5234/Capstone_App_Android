@@ -25,11 +25,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        getAppKeyHash();
-
-        Log.d("activity", "onCreate 호출됨");
-        Toast.makeText(getApplicationContext(), "oncreate 호출된당", Toast.LENGTH_SHORT).show();
-
         Button btnLogin = (Button) findViewById(R.id.buttonLogin);
         Button btnRegister = (Button) findViewById(R.id.buttonRegister);
         Button btnExample = findViewById(R.id.buttonTest);
@@ -57,21 +52,5 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-    }
-
-    private void getAppKeyHash() {
-        try {
-            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
-            for (Signature signature : info.signatures) {
-                MessageDigest md;
-                md = MessageDigest.getInstance("SHA");
-                md.update(signature.toByteArray());
-                String something = new String(Base64.encode(md.digest(), 0));
-                Log.e("Hash key", something);
-            }
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            Log.e("name not found", e.toString());
-        }
     }
 }

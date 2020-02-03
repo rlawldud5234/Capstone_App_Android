@@ -20,24 +20,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.proto1.Directionhelpers.FetchURL;
-import com.example.proto1.Directionhelpers.TaskLoadedCallback;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
@@ -50,7 +39,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class GuideFragment extends Fragment {
     private String app_key;
@@ -68,6 +59,7 @@ public class GuideFragment extends Fragment {
     private TextView descView;
 
     TextToSpeech tts;
+    String sdata;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,6 +103,13 @@ public class GuideFragment extends Fragment {
         });
 
         descView = view.findViewById(R.id.descriptionView);
+
+        tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                tts.setLanguage(Locale.KOREA);
+            }
+        });
 
         TTSBtn = view.findViewById(R.id.TTSbutton);
         TTSBtn.setOnClickListener(new View.OnClickListener() {
@@ -167,7 +166,7 @@ public class GuideFragment extends Fragment {
     //장소 검색
     protected void searchDestination() {
         final ArrayList<TMapPoint> pointList = new ArrayList<TMapPoint>();        //검색 마커
-
+        pointList.clear();
 
         searchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -205,6 +204,7 @@ public class GuideFragment extends Fragment {
                     public void onCalloutRightButton(TMapMarkerItem tMapMarkerItem) {
                         endpoint = tMapMarkerItem.getTMapPoint();
                         Log.d("LL", "----"+endpoint);
+                        Toast.makeText(getContext(),tMapMarkerItem.getName()+" 선택", Toast.LENGTH_LONG).show();
                     }
                 });
             }
@@ -241,31 +241,17 @@ public class GuideFragment extends Fragment {
                         //위도,경도 값 받기
                         if(nodeListPlacemarkItem.item(j).getNodeName().equals("Point")) {
                             String pointLatLng = nodeListPlacemarkItem.item(j).getTextContent().trim();
-                            String[] ll = pointLatLng.split(",");
-                            latitude = Double.valueOf(ll[1]);
-                            longitude = Double.valueOf(ll[0]);
                             Log.d("path", "----point----: "+pointLatLng);
-
-                            TMapPoint path_point = new TMapPoint(latitude, longitude);
-
-                            TMapMarkerItem pathMarker = new TMapMarkerItem();
-                            pathMarker.setTMapPoint(path_point);
-                            pathMarker.setVisible(tItem.VISIBLE);
-                            pathMarker.setIcon(wayPoint);
-                            pathMarker.setPosition(0.5f,1.0f);
-                            tmapView.addMarkerItem("path"+i, pathMarker);
                         }
                     }
                 }
+
                 //길 안내 문자열 배열로 저장
                 String[] strData = descArr.toArray(new String[descArr.size()]);
-
-                for(int i = 0; i < descArr.size(); i++) {
-                    Log.d("path", "----path1----: "+descArr.get(i));
-                }
+                sdata = Arrays.toString(strData).replaceAll("\\\\", "");
 
                 //텍스트뷰에 길 안내 설정
-                descView.setText(strData[0]);
+                descView.setText(sdata);
             }
         });
 
@@ -285,7 +271,7 @@ public class GuideFragment extends Fragment {
         String description = descView.getText().toString();
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            String utteranceId=this.hashCode() + "";
+            String utteranceId = this.hashCode() + "";
             tts.speak(description, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
         } else {
             HashMap<String, String> hashmap = new HashMap<>();
