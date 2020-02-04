@@ -52,7 +52,7 @@ public class GuideFragment extends Fragment {
 
     Bitmap bitmap, wayPoint, rightBtn;
     private EditText searchBar;
-    private Button searchBtn, directionBtn, TTSBtn;
+    private Button searchBtn, directionBtn, TTSBtn, nextBtn;
 
     private String start_geo, end_geo;
     private TMapPoint currentpoint, startpoint, endpoint;
@@ -60,6 +60,9 @@ public class GuideFragment extends Fragment {
 
     TextToSpeech tts;
     String sdata;
+    int i;
+
+    final ArrayList<String> descArr = new ArrayList<String>();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -123,6 +126,20 @@ public class GuideFragment extends Fragment {
         bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.drawable.poi_dot);
         wayPoint = BitmapFactory.decodeResource(getActivity().getResources(), R.drawable.ic_circle);
         rightBtn = BitmapFactory.decodeResource(getActivity().getResources(), R.drawable.tick);
+
+        nextBtn = view.findViewById(R.id.button2);
+        nextBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view){
+                if(i < descArr.size()) {
+                    descView.setText(descArr.get(i));
+                    i++;
+
+                }else if(i >= descArr.size()) {
+                    descView.setText("안내가 끝났습니다.");
+                }
+            }
+        });
 
         return view;
     }
@@ -213,7 +230,8 @@ public class GuideFragment extends Fragment {
 
     //보행자 경로 데이터 검색
     protected void directions() {
-        final ArrayList<String> descArr = new ArrayList<String>();
+        descArr.clear();
+        i = 0;
 
         end_geo = "&endX="+endpoint.getLongitude()+"&endY="+endpoint.getLatitude();
 
@@ -247,11 +265,12 @@ public class GuideFragment extends Fragment {
                 }
 
                 //길 안내 문자열 배열로 저장
-                String[] strData = descArr.toArray(new String[descArr.size()]);
-                sdata = Arrays.toString(strData).replaceAll("\\\\", "");
+//                String[] strData = descArr.toArray(new String[descArr.size()]);
+//                sdata = Arrays.toString(strData).replaceAll("\\\\", "");
 
                 //텍스트뷰에 길 안내 설정
-                descView.setText(sdata);
+//                 descView.setText(sdata);
+                descView.setText(descArr.get(i));
             }
         });
 
