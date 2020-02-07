@@ -1,13 +1,15 @@
 package com.example.proto2;
 
 import android.os.Bundle;
+import androidx.fragment.app.Fragment;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.fragment.app.Fragment;
 
-public class RightFragment extends Fragment{
+
+public class LeftFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
@@ -15,8 +17,8 @@ public class RightFragment extends Fragment{
     private int page;
 
 
-    public static RightFragment newInstance(String param1, String param2) {
-        RightFragment fragment = new RightFragment();
+    public static LeftFragment newInstance(String param1, String param2) {
+        LeftFragment fragment = new LeftFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -34,9 +36,7 @@ public class RightFragment extends Fragment{
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_right, container, false);
+        View view = inflater.inflate(R.layout.fragment_left, container, false);
         return view;
     }
-
-
 }
