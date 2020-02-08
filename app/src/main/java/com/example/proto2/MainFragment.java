@@ -25,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
@@ -60,6 +61,7 @@ public class MainFragment extends Fragment {
 
     private EditText searchBar;
     private Button searchBtn;
+    private TextView descTextview;
 
     public static MainFragment newInstance(String param1, String param2) {
         MainFragment fragment = new MainFragment();
@@ -128,6 +130,8 @@ public class MainFragment extends Fragment {
         });
         rv.setAdapter(mAdapter);
 
+        descTextview = (TextView) view.findViewById(R.id.descView);
+
         return view;
     }
 
@@ -193,6 +197,7 @@ public class MainFragment extends Fragment {
 
     public void GetDirections() {
         final ArrayList<String> descArr = new ArrayList<String>();
+        descArr.clear();
 
         tData.findPathDataAllType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataAllListenerCallback() {
             @Override
@@ -211,7 +216,9 @@ public class MainFragment extends Fragment {
                         }
                     }
                 }
+                descTextview.setText(descArr.get(0));
             }
+
         });
 
         tData.findPathDataWithType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataListenerCallback() {
