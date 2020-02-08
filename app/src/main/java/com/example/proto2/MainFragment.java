@@ -54,7 +54,6 @@ public class MainFragment extends Fragment {
     private EditText searchBar;
     private Button searchBtn;
 
-
     public static MainFragment newInstance(String param1, String param2) {
         MainFragment fragment = new MainFragment();
         Bundle args = new Bundle();
@@ -88,6 +87,8 @@ public class MainFragment extends Fragment {
 
         //TMAP 호출
         LinearLayout linearLayoutTmap = view.findViewById(R.id.TMapLayout);
+        RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_poi);
+        rv.addItemDecoration(new DividerItemDecoration(view.getContext(), 1));
 
         tData = new TMapData();
 
@@ -108,12 +109,9 @@ public class MainFragment extends Fragment {
             }
         });
 
-        RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_poi);
-
         poiNameArr = new ArrayList<>();
         mAdapter = new Adapter(poiNameArr);
         rv.setAdapter(mAdapter);
-        rv.addItemDecoration(new DividerItemDecoration(view.getContext(), 1));
 
         return view;
     }
@@ -156,8 +154,8 @@ public class MainFragment extends Fragment {
 
     //장소 검색
     protected void searchDestination() {
-        final ArrayList<TMapPoint> pointList = new ArrayList<TMapPoint>();        //검색 마커
-        pointList.clear();
+//        final ArrayList<TMapPoint> pointList = new ArrayList<TMapPoint>();        //검색 마커
+//        pointList.clear();
 
         String dest = searchBar.getText().toString();
 
@@ -169,8 +167,8 @@ public class MainFragment extends Fragment {
                     String str_addr = item.getPOIAddress();
                     String str_name = item.getPOIName();
                     TMapPoint poi_point = item.getPOIPoint();
-                    pointList.add(poi_point);
-                    data = new Dictionary(str_name);
+//                    pointList.add(poi_point);
+                    data = new Dictionary(str_name, poi_point);
                     poiNameArr.add(data);
 
                     Log.d("----debug----", "\n이름: "+str_name+"\n주소: "+str_addr+"\n좌표: "+poi_point.toString());

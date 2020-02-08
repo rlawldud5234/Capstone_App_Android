@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,13 +19,16 @@ public class Adapter extends RecyclerView.Adapter<Adapter.RecyclerViewHolder> {
 
         public RecyclerViewHolder(View v) {
             super(v);
-            this.name_view = (TextView) v.findViewById(R.id.poiView);
             v.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Log.d("----TAG----", "clicked");
+                    int p = getAdapterPosition();
+                    if(p != RecyclerView.NO_POSITION) {
+                        Log.d("----TAG", String.valueOf(poiList.get(p).getPOI_latlng()));
+                    }
                 }
             });
+            this.name_view = (TextView) v.findViewById(R.id.poiView);
         }
     }
 
