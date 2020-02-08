@@ -4,10 +4,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -28,7 +30,12 @@ import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
 import com.skt.Tmap.TMapPoint;
+import com.skt.Tmap.TMapPolyLine;
 import com.skt.Tmap.TMapView;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
 
@@ -48,7 +55,7 @@ public class MainFragment extends Fragment {
 
     private TMapData tData;
     private TMapView tmapView;
-    private TMapPoint tPoint, currentpoint;
+    private TMapPoint tPoint, currentpoint, endpoint;
     private TMapMarkerItem tItem;
 
     private EditText searchBar;
@@ -111,6 +118,14 @@ public class MainFragment extends Fragment {
 
         poiNameArr = new ArrayList<>();
         mAdapter = new Adapter(poiNameArr);
+        mAdapter.setOnItemClickListener(new Adapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                endpoint = poiNameArr.get(position).getPOI_latlng();
+                Log.d("----TAG", String.valueOf(endpoint));
+                GetDirections();
+            }
+        });
         rv.setAdapter(mAdapter);
 
         return view;
@@ -143,13 +158,12 @@ public class MainFragment extends Fragment {
     //현재위치 받기
     public void setGps() {
         final LocationManager lm = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            }
         }
-        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, // 등록할 위치제공자(실내에선 NETWORK_PROVIDER 권장)
-                1000, // 통지사이의 최소 시간간격 (miliSecond)
-                1, // 통지사이의 최소 변경거리 (m)
-                mLocationListener);
+        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 1, mLocationListener);
     }
 
     //장소 검색
@@ -173,6 +187,39 @@ public class MainFragment extends Fragment {
 
                     Log.d("----debug----", "\n이름: "+str_name+"\n주소: "+str_addr+"\n좌표: "+poi_point.toString());
                 }
+            }
+        });
+    }
+
+    public void GetDirections() {
+        final ArrayList<String> descArr = new ArrayList<String>();
+
+        tData.findPathDataAllType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataAllListenerCallback() {
+            @Override
+            public void onFindPathDataAll(Document document) {
+                Element root = document.getDocumentElement();
+                NodeList nodeListPlacemark = root.getElementsByTagName("Placemark");
+                double lat, lng;
+
+                for(int i = 0; i < nodeListPlacemark.getLength(); i++) {
+                    NodeList nodeListPlacemarkItem = nodeListPlacemark.item(i).getChildNodes();
+                    for(int j = 0; j < nodeListPlacemarkItem.getLength(); j++) {
+                        if(nodeListPlacemarkItem.item(j).getNodeName().equals("tmap:nodeType")) {
+                            if(nodeListPlacemarkItem.item(j).getTextContent().equals("POINT")) {    //tmap:nodeType의 값이 POINT인지 판별
+                                descArr.add(nodeListPlacemarkItem.item(7).getTextContent());    //길 안내 정보 배열로 만듦
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        tData.findPathDataWithType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataListenerCallback() {
+            @Override
+            public void onFindPathData(TMapPolyLine polyLine) {
+                polyLine.setLineColor(Color.RED);
+                polyLine.setLineWidth(2);
+                tmapView.addTMapPath(polyLine);
             }
         });
     }
