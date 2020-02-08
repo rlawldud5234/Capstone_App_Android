@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".RightFragment">
+
+
+    <androidx.gridlayout.widget.GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:columnCount="4"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_gravity="center"
+        app:orientation="horizontal"
+        app:rowCount="3">
+
+
+        <Button
+            android:id="@+id/aiBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="220dp"
+            android:background="#00ff0000"
+            android:drawableLeft="@android:drawable/btn_star_big_off"
+            android:text="AI 모드"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <Button
+            android:id="@+id/textBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="220dp"
+            android:text="문자 인식"
+            app:layout_constraintStart_toEndOf="@+id/aiBtn"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/faceBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="220dp"
+            android:text="얼굴 인식"
+            app:layout_constraintStart_toEndOf="@+id/textBtn"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/imageBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="220dp"
+            android:text="이미지 묘사"
+            app:layout_constraintStart_toStartOf="@+id/aiBtn"
+            app:layout_constraintTop_toBottomOf="@+id/aiBtn" />
+
+        <Button
+            android:id="@+id/colorBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="56dp"
+            android:text="색상 인식"
+            app:layout_constraintStart_toStartOf="@+id/textBtn"
+            app:layout_constraintTop_toBottomOf="@+id/textBtn" />
+
+        <Button
+            android:id="@+id/lightBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="56dp"
+            android:text="빛 밝기"
+            app:layout_constraintStart_toStartOf="@+id/faceBtn"
+            app:layout_constraintTop_toBottomOf="@+id/faceBtn" />
+
+        <Button
+            android:id="@+id/lensBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="56dp"
+            android:text="돋보기"
+            app:layout_constraintStart_toStartOf="@+id/imageBtn"
+            app:layout_constraintTop_toBottomOf="@+id/imageBtn" />
+
+        <Button
+            android:id="@+id/noteBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="56dp"
+            android:text="노트 보기"
+            app:layout_constraintStart_toStartOf="@+id/colorBtn"
+            app:layout_constraintTop_toBottomOf="@+id/colorBtn" />
+
+        <Button
+            android:id="@+id/communityBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="72dp"
+            android:text="커뮤니티"
+            app:layout_constraintStart_toStartOf="@+id/lightBtn"
+            app:layout_constraintTop_toBottomOf="@+id/lightBtn" />
+
+        <Button
+            android:id="@+id/questionBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="72dp"
+            android:text="도움말"
+            app:layout_constraintStart_toStartOf="@+id/lensBtn"
+            app:layout_constraintTop_toBottomOf="@+id/lensBtn" />
+
+        <Button
+            android:id="@+id/settingBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="72dp"
+            android:text="설정"
+            app:layout_constraintStart_toStartOf="@+id/noteBtn"
+            app:layout_constraintTop_toBottomOf="@+id/noteBtn" />
+
+        <Button
+            android:id="@+id/exitBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="72dp"
+            android:text="메뉴 닫기"
+            app:layout_constraintStart_toStartOf="@+id/communityBtn"
+            app:layout_constraintTop_toBottomOf="@+id/communityBtn" />
+    </androidx.gridlayout.widget.GridLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

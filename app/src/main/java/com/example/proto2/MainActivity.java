@@ -19,10 +19,12 @@ public class MainActivity extends AppCompatActivity {
         ViewPager vpPager = (ViewPager) findViewById(R.id.vpPager);
         adapterViewPager = new MyPagerAdapter(getSupportFragmentManager());
         vpPager.setAdapter(adapterViewPager);
+        vpPager.setCurrentItem(1);
     }
 
+
     public static class MyPagerAdapter extends FragmentPagerAdapter {
-        private static int NUM_ITEMS = 2;
+        private static int NUM_ITEMS = 3;
 
         public MyPagerAdapter(FragmentManager fragmentManager) {
             super(fragmentManager);
@@ -39,9 +41,11 @@ public class MainActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    return MainFragment.newInstance("0", "Page # 1");
+                    return LeftFragment.newInstance("0", "Page # 1");
                 case 1:
-                    return LeftFragment.newInstance("1", "Page # 2");
+                    return MainFragment.newInstance("1", "Page # 2");
+                case 2:
+                    return RightFragment.newInstance("2", "Page # 3");
                 default:
                     return null;
             }

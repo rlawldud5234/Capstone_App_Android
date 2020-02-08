@@ -13,6 +13,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,6 +36,11 @@ import java.util.ArrayList;
 public class MainFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+
+    private ArrayList<Dictionary> poiNameArr;
+    private Adapter mAdapter;
+    Dictionary data;
+
     private Activity activity;
 
     private String title;
@@ -97,8 +104,16 @@ public class MainFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 searchDestination();
+                mAdapter.notifyDataSetChanged();
             }
         });
+
+        RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_poi);
+
+        poiNameArr = new ArrayList<>();
+        mAdapter = new Adapter(poiNameArr);
+        rv.setAdapter(mAdapter);
+        rv.addItemDecoration(new DividerItemDecoration(view.getContext(), 1));
 
         return view;
     }
@@ -144,24 +159,22 @@ public class MainFragment extends Fragment {
         final ArrayList<TMapPoint> pointList = new ArrayList<TMapPoint>();        //검색 마커
         pointList.clear();
 
-        searchBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String dest = searchBar.getText().toString();
+        String dest = searchBar.getText().toString();
 
-                tData.findAroundNamePOI(currentpoint, dest, new TMapData.FindAroundNamePOIListenerCallback() {
-                    @Override
-                    public void onFindAroundNamePOI(ArrayList<TMapPOIItem> poiItem) {   //지도 위치 또는 현재 위치 기준으로 검색
-                        for(int i = 0; i < poiItem.size(); i++) {
-                            TMapPOIItem item = poiItem.get(i);
-                            String str_addr = item.getPOIAddress();
-                            String str_name = item.getPOIName();
-                            TMapPoint poi_point = item.getPOIPoint();
-                            Log.d("----debug----", "\n이름: "+str_name+"\n주소: "+str_addr+"\n좌표: "+poi_point.toString());
-                            pointList.add(poi_point);
-                        }
-                    }
-                });
+        tData.findAroundNamePOI(currentpoint, dest, 2, 10, new TMapData.FindAroundNamePOIListenerCallback() {
+            @Override
+            public void onFindAroundNamePOI(ArrayList<TMapPOIItem> poiItem) {   //지도 위치 또는 현재 위치 기준으로 검색
+                for(int i = 0; i < poiItem.size(); i++) {
+                    TMapPOIItem item = poiItem.get(i);
+                    String str_addr = item.getPOIAddress();
+                    String str_name = item.getPOIName();
+                    TMapPoint poi_point = item.getPOIPoint();
+                    pointList.add(poi_point);
+                    data = new Dictionary(str_name);
+                    poiNameArr.add(data);
+
+                    Log.d("----debug----", "\n이름: "+str_name+"\n주소: "+str_addr+"\n좌표: "+poi_point.toString());
+                }
             }
         });
     }
