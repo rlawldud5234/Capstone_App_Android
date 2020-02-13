@@ -59,7 +59,6 @@ public class MainFragment extends Fragment {
     private TMapPoint tPoint, currentpoint, endpoint;
     private TMapMarkerItem tItem;
 
-    private EditText searchBar;
     private Button searchBtn;
     private TextView descTextview;
 
@@ -108,7 +107,6 @@ public class MainFragment extends Fragment {
         tmapView.setIconVisibility(true);
         tmapView.bringMarkerToFront(tItem);
 
-        searchBar = view.findViewById(R.id.editDest);
         searchBtn = view.findViewById(R.id.search_btn);
         searchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -175,7 +173,7 @@ public class MainFragment extends Fragment {
 //        final ArrayList<TMapPoint> pointList = new ArrayList<TMapPoint>();        //검색 마커
 //        pointList.clear();
 
-        String dest = searchBar.getText().toString();
+        String dest = "공원";
 
         tData.findAroundNamePOI(currentpoint, dest, 2, 10, new TMapData.FindAroundNamePOIListenerCallback() {
             @Override
