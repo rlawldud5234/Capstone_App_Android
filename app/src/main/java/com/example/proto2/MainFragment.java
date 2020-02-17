@@ -31,6 +31,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -69,7 +70,8 @@ public class MainFragment extends Fragment {
     private TMapMarkerItem tItem;
 
     private Button searchBtn, buttonSearch;
-    private TextView descTextview, speechTextView;
+    private TextView speechTextView;
+    private EditText searchBar;
 
     SpeechRecognizer sRecognizer;
     Intent i;
@@ -160,6 +162,8 @@ public class MainFragment extends Fragment {
             }
         });
 
+        searchBar = view.findViewById(R.id.search_bar);
+
         poiNameArr = new ArrayList<>();
         mAdapter = new Adapter(poiNameArr);
         mAdapter.setOnItemClickListener(new Adapter.OnItemClickListener() {
@@ -173,7 +177,6 @@ public class MainFragment extends Fragment {
         });
         rv.setAdapter(mAdapter);
 
-//        descTextview = (TextView) view.findViewById(R.id.descView);
         speechTextView = (TextView) view.findViewById(R.id.speechView);
 
         return view;
@@ -232,6 +235,11 @@ public class MainFragment extends Fragment {
 //        pointList.clear();
 
         String dest = "약국";
+        dest = searchBar.getText().toString();
+
+        if(poiNameArr.size() > 0) {
+            poiNameArr.clear();
+        }
 
         tData.findAroundNamePOI(currentpoint, dest, 2, 10, new TMapData.FindAroundNamePOIListenerCallback() {
             @Override
@@ -280,7 +288,7 @@ public class MainFragment extends Fragment {
                         }
                     }
                 }
-                descTextview.setText(descArr.get(0));
+                speechTextView.setText(descArr.get(0));
                 speakTTS(descArr.get(0));
             }
 
@@ -407,6 +415,7 @@ public class MainFragment extends Fragment {
 
         key = SpeechRecognizer.RESULTS_RECOGNITION;
         speechTextView.setText(key);
+        speakTTS(key);
     }
 
 }

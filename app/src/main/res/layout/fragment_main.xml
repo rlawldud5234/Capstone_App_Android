@@ -7,57 +7,96 @@
     tools:context=".MainFragment">
 
 
-    <LinearLayout
-        android:id="@+id/TMapLayout"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:orientation="vertical"
+        android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
 
-    <Button
-        android:id="@+id/search_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="음성인식"
-        android:textSize="30dp"
+            <LinearLayout
+                android:id="@+id/TMapLayout"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-        app:layout_constraintTop_toBottomOf="@+id/TMapLayout" />
-
-
-    <Button
-        android:id="@+id/buttonSearch"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="장소검색"
-        app:layout_constraintBottom_toBottomOf="@+id/TMapLayout"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/speechView"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center"
-        android:text=""
-        android:textColor="@color/textcolor"
-        android:textSize="28dp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/recycler_poi"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/search_btn" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_poi"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:layout_editor_absoluteX="0dp"
-        tools:listitem="@layout/list_item" />
+            </LinearLayout>
 
 
+            <LinearLayout
+                android:id="@+id/linearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:orientation="vertical"
+                app:layout_constraintTop_toBottomOf="@+id/TMapLayout">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/search_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+
+                        android:ems="10"
+                        android:inputType="textPersonName" />
+
+                    <Button
+                        android:id="@+id/buttonSearch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="장소검색" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/search_btn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="음성인식" />
+
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/speechView"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center"
+                android:text=""
+                android:textColor="@color/textcolor"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@+id/recycler_poi"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_poi"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:listitem="@layout/list_item" />
+        </LinearLayout>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

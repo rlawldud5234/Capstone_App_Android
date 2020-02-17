@@ -10,13 +10,14 @@ import android.os.Bundle;
 
 public class MainActivity extends AppCompatActivity {
     FragmentPagerAdapter adapterViewPager;
+    ViewPager vpPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ViewPager vpPager = (ViewPager) findViewById(R.id.vpPager);
+        vpPager = (ViewPager) findViewById(R.id.vpPager);
         adapterViewPager = new MyPagerAdapter(getSupportFragmentManager());
         vpPager.setAdapter(adapterViewPager);
         vpPager.setCurrentItem(1);

@@ -37,6 +37,4 @@ public class RightFragment extends Fragment{
         View view = inflater.inflate(R.layout.fragment_right, container, false);
         return view;
     }
-
-
 }
