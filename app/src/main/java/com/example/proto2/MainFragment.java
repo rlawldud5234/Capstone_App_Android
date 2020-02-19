@@ -35,6 +35,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.skt.Tmap.TMapCircle;
 import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
@@ -66,7 +67,7 @@ public class MainFragment extends Fragment {
 
     private TMapData tData;
     private TMapView tmapView;
-    private TMapPoint tPoint, currentpoint, endpoint;
+    private TMapPoint tPoint, currentpoint, endpoint, testpoint;
     private TMapMarkerItem tItem;
 
     private Button searchBtn, buttonSearch;
@@ -116,7 +117,12 @@ public class MainFragment extends Fragment {
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");   //음성 번역 언어
         sRecognizer = SpeechRecognizer.createSpeechRecognizer(getContext());    //새 SpeechRecognizer를 만드는 팩토리 메서드
         sRecognizer.setRecognitionListener(listener);   //리스너 설정
+    }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_main, container, false);
+        setGps();
         //TTS 설정
         tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -124,12 +130,6 @@ public class MainFragment extends Fragment {
                 tts.setLanguage(Locale.KOREA);
             }
         });
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_main, container, false);
-        setGps();
 
         //TMAP 호출
         LinearLayout linearLayoutTmap = view.findViewById(R.id.TMapLayout);
@@ -143,7 +143,9 @@ public class MainFragment extends Fragment {
         linearLayoutTmap.addView(tmapView);
 
         tmapView.setIconVisibility(true);
+        tmapView.setCompassMode(true);
         tmapView.bringMarkerToFront(tItem);
+        tmapView.setZoomLevel(17);
 
         buttonSearch = view.findViewById(R.id.buttonSearch);
         buttonSearch.setOnClickListener(new View.OnClickListener() {
@@ -171,7 +173,7 @@ public class MainFragment extends Fragment {
             public void onItemClick(View view, int position) {
                 endpoint = poiNameArr.get(position).getPOI_latlng();
                 Log.d("----TAG", String.valueOf(endpoint));
-                speakTTS(poiNameArr.get(position).getPOI_name()+"을 선택했습니다");
+                speakTTS(poiNameArr.get(position).getPOI_name()+"을 선택했습니다.");
                 GetDirections();
             }
         });
@@ -205,6 +207,7 @@ public class MainFragment extends Fragment {
                 tmapView.setCenterPoint(longitude, latitude);
 
                 currentpoint = new TMapPoint(latitude, longitude);
+                aaaaaa();
             }
         }
 
@@ -231,17 +234,16 @@ public class MainFragment extends Fragment {
 
     //장소 검색
     protected void searchDestination() {
-//        final ArrayList<TMapPoint> pointList = new ArrayList<TMapPoint>();        //검색 마커
-//        pointList.clear();
+        String dest = searchBar.getText().toString();
+        Log.d("----debug----", "검색어: "+dest);
+        speakTTS(dest+"을 검색했습니다");
 
-        String dest = "약국";
-        dest = searchBar.getText().toString();
 
         if(poiNameArr.size() > 0) {
             poiNameArr.clear();
         }
 
-        tData.findAroundNamePOI(currentpoint, dest, 2, 10, new TMapData.FindAroundNamePOIListenerCallback() {
+        tData.findAroundNamePOI(currentpoint, dest, 1, 10, new TMapData.FindAroundNamePOIListenerCallback() {
             @Override
             public void onFindAroundNamePOI(ArrayList<TMapPOIItem> poiItem) {   //지도 위치 또는 현재 위치 기준으로 검색
                 for(int i = 0; i < poiItem.size(); i++) {
@@ -249,12 +251,10 @@ public class MainFragment extends Fragment {
                     String str_addr = item.getPOIAddress();
                     String str_name = item.getPOIName();
                     TMapPoint poi_point = item.getPOIPoint();
-//                    pointList.add(poi_point);
                     data = new Dictionary(str_name, poi_point);
                     poiNameArr.add(data);
 
                     Log.d("----debug----", "\n이름: "+str_name+"\n주소: "+str_addr+"\n좌표: "+poi_point.toString());
-                    speakTTS(str_name);
                 }
                 new Thread(){
                     public void run(){
@@ -284,11 +284,12 @@ public class MainFragment extends Fragment {
                         if(nodeListPlacemarkItem.item(j).getNodeName().equals("tmap:nodeType")) {
                             if(nodeListPlacemarkItem.item(j).getTextContent().equals("POINT")) {    //tmap:nodeType의 값이 POINT인지 판별
                                 descArr.add(nodeListPlacemarkItem.item(7).getTextContent());    //길 안내 정보 배열로 만듦
+                                Log.d("----", nodeListPlacemarkItem.item(7).getTextContent());
+
                             }
                         }
                     }
                 }
-                speechTextView.setText(descArr.get(0));
                 speakTTS(descArr.get(0));
             }
 
@@ -302,6 +303,7 @@ public class MainFragment extends Fragment {
                 tmapView.addTMapPath(polyLine);
             }
         });
+        speechTextView.setText(descArr.get(0));
     }
 
     //음성 인식 실행
@@ -416,6 +418,39 @@ public class MainFragment extends Fragment {
         key = SpeechRecognizer.RESULTS_RECOGNITION;
         speechTextView.setText(key);
         speakTTS(key);
+    }
+
+    //범위 테스트
+    public void aaaaaa(){
+        testpoint = new TMapPoint(35.895104, 128.623603);
+//        testpoint = new TMapPoint(35.896322, 128.620311);
+        TMapCircle tCircle = new TMapCircle();
+        tCircle.setCenterPoint(currentpoint);
+        tCircle.setRadius(50);
+        tCircle.setAreaColor(Color.GRAY);
+        tCircle.setAreaAlpha(100);
+        tmapView.addTMapCircle("circle1", tCircle);
+
+        float dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+
+        if(dist<50){
+            speechTextView.setText("범위 안에 있습니다");
+        } else {
+            speechTextView.setText("두 지점 사이의 거리: "+dist);
+            speakTTS("두 지점 사이의 거리: "+dist);
+        }
+    }
+
+    public float DistnaceDgree(double lat1, double lng1, double lat2, double lng2) {
+        Location point1 = new Location("Point A");
+        Location point2 = new Location("Point B");
+        point1.setLatitude(lat1);
+        point1.setLongitude(lng1);
+        point2.setLatitude(lat2);
+        point2.setLongitude(lng2);
+        float distance = point1.distanceTo(point2);
+
+        return distance;
     }
 
 }
