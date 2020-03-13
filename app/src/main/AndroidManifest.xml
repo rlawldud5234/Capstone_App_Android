@@ -16,14 +16,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name=".MainActivity"
-            android:windowSoftInputMode="stateAlwaysHidden">
+        <activity android:name=".prevActivity">
             <intent-filter>
-                <action
-                    android:name="android.intent.action.MAIN"/>
-
+                <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:windowSoftInputMode="stateAlwaysHidden">
         </activity>
     </application>
 

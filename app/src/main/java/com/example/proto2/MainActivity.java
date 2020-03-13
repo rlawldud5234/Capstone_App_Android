@@ -1,11 +1,13 @@
 package com.example.proto2;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 
 public class MainActivity extends AppCompatActivity {
@@ -19,9 +21,11 @@ public class MainActivity extends AppCompatActivity {
 
         vpPager = (ViewPager) findViewById(R.id.vpPager);
         adapterViewPager = new MyPagerAdapter(getSupportFragmentManager());
+
         vpPager.setAdapter(adapterViewPager);
         vpPager.setCurrentItem(1);
     }
+
 
 
     public static class MyPagerAdapter extends FragmentPagerAdapter {

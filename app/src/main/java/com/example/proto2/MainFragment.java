@@ -15,6 +15,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
@@ -37,6 +38,7 @@ import android.widget.TextView;
 
 import com.skt.Tmap.TMapCircle;
 import com.skt.Tmap.TMapData;
+import com.skt.Tmap.TMapGpsManager;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
 import com.skt.Tmap.TMapPoint;
@@ -52,7 +54,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 
-public class MainFragment extends Fragment {
+public class MainFragment extends Fragment implements TMapGpsManager.onLocationChangedCallback {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
@@ -74,15 +76,18 @@ public class MainFragment extends Fragment {
     private TextView speechTextView;
     private EditText searchBar;
 
+    LocationManager lm;
     SpeechRecognizer sRecognizer;
+
     Intent i;
     String key = "";
+    double latitude, longitude;
 
     TextToSpeech tts;
 
     final Handler handler = new Handler(){
         public void handleMessage(Message message){
-            Log.d("----", "핸들러 실행");
+            Log.d("----", "검색 결과 핸들러");
             mAdapter.notifyDataSetChanged();
         }
     };
@@ -143,6 +148,8 @@ public class MainFragment extends Fragment {
         linearLayoutTmap.addView(tmapView);
 
         tmapView.setIconVisibility(true);
+        tmapView.setTrackingMode(true);
+        tmapView.setSightVisible(true);
         tmapView.setCompassMode(true);
         tmapView.bringMarkerToFront(tItem);
         tmapView.setZoomLevel(17);
@@ -175,6 +182,7 @@ public class MainFragment extends Fragment {
                 Log.d("----TAG", String.valueOf(endpoint));
                 speakTTS(poiNameArr.get(position).getPOI_name()+"을 선택했습니다.");
                 GetDirections();
+                distTest(position);
             }
         });
         rv.setAdapter(mAdapter);
@@ -197,17 +205,16 @@ public class MainFragment extends Fragment {
 
     }
 
-    //현재 위치 리스너
-    private final LocationListener mLocationListener = new LocationListener() {
+    private LocationListener mLocationListener = new LocationListener() {
         public void onLocationChanged(Location location) {
             if (location != null) {
-                double latitude = location.getLatitude();
-                double longitude = location.getLongitude();
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
                 tmapView.setLocationPoint(longitude, latitude);
                 tmapView.setCenterPoint(longitude, latitude);
 
                 currentpoint = new TMapPoint(latitude, longitude);
-                aaaaaa();
+                speechTextView.setText(latitude+"/"+longitude);
             }
         }
 
@@ -223,13 +230,16 @@ public class MainFragment extends Fragment {
 
     //현재위치 받기
     public void setGps() {
-        final LocationManager lm = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            }
+        //현재 위치 리스너
+
+        lm = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
+
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(activity, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        } else {
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 1, mLocationListener);
         }
-        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 1, mLocationListener);
     }
 
     //장소 검색
@@ -269,7 +279,9 @@ public class MainFragment extends Fragment {
     //경로 데이터 얻기
     public void GetDirections() {
         final ArrayList<String> descArr = new ArrayList<String>();
+        final ArrayList<TMapPoint> pointArr = new ArrayList<TMapPoint>();
         descArr.clear();
+        pointArr.clear();
 
         tData.findPathDataAllType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataAllListenerCallback() {
             @Override
@@ -285,12 +297,21 @@ public class MainFragment extends Fragment {
                             if(nodeListPlacemarkItem.item(j).getTextContent().equals("POINT")) {    //tmap:nodeType의 값이 POINT인지 판별
                                 descArr.add(nodeListPlacemarkItem.item(7).getTextContent());    //길 안내 정보 배열로 만듦
                                 Log.d("----", nodeListPlacemarkItem.item(7).getTextContent());
-
                             }
+                        }
+
+                        if(nodeListPlacemarkItem.item(j).getNodeName().equals("Point")) {
+                            String pointLatLng = nodeListPlacemarkItem.item(j).getTextContent().trim();
+                            String[] latlng = pointLatLng.split(",");
+                            TMapPoint pathPoint = new TMapPoint(Double.valueOf(latlng[1]),Double.valueOf(latlng[0]));
+
+                            pointArr.add(pathPoint);
+                            Log.d("path", "----point----: "+pathPoint);
                         }
                     }
                 }
                 speakTTS(descArr.get(0));
+                speechTextView.setText(descArr.get(0));
             }
 
         });
@@ -303,12 +324,11 @@ public class MainFragment extends Fragment {
                 tmapView.addTMapPath(polyLine);
             }
         });
-        speechTextView.setText(descArr.get(0));
     }
 
     //음성 인식 실행
     public void speakDestination(){
-        sRecognizer.startListening(i);  //듣기 시작
+        sRecognizer.startListening(i);
     }
 
     //음성 인식 리스너
@@ -421,11 +441,13 @@ public class MainFragment extends Fragment {
     }
 
     //범위 테스트
-    public void aaaaaa(){
-        testpoint = new TMapPoint(35.895104, 128.623603);
+    public void distTest(int position){
+        testpoint = new TMapPoint(35.516303, 128.915945);
 //        testpoint = new TMapPoint(35.896322, 128.620311);
+        testpoint = poiNameArr.get(position).getPOI_latlng();
+
         TMapCircle tCircle = new TMapCircle();
-        tCircle.setCenterPoint(currentpoint);
+        tCircle.setCenterPoint(testpoint);
         tCircle.setRadius(50);
         tCircle.setAreaColor(Color.GRAY);
         tCircle.setAreaAlpha(100);
@@ -433,11 +455,11 @@ public class MainFragment extends Fragment {
 
         float dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
 
+        //횡단보도에 쓸거
         if(dist<50){
             speechTextView.setText("범위 안에 있습니다");
         } else {
             speechTextView.setText("두 지점 사이의 거리: "+dist);
-            speakTTS("두 지점 사이의 거리: "+dist);
         }
     }
 
@@ -452,5 +474,9 @@ public class MainFragment extends Fragment {
 
         return distance;
     }
-
+    
+    @Override
+    public void onLocationChange(Location location) {
+        tmapView.setLocationPoint(location.getLongitude(), location.getLatitude());
+    }
 }
