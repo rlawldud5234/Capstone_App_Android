@@ -2,7 +2,9 @@ package com.example.proto2;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -35,6 +37,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.skt.Tmap.TMapCircle;
 import com.skt.Tmap.TMapData;
@@ -49,6 +52,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -57,10 +61,13 @@ import java.util.Locale;
 public class MainFragment extends Fragment implements TMapGpsManager.onLocationChangedCallback {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    String desc_str;
 
     private ArrayList<Dictionary> poiNameArr;
+    private ArrayList<PathPoint> pointArr;
     private Adapter mAdapter;
     Dictionary data;
+    PathPoint pPonit;
 
     private Activity activity;
 
@@ -69,7 +76,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     private TMapData tData;
     private TMapView tmapView;
-    private TMapPoint tPoint, currentpoint, endpoint, testpoint;
+    private TMapPoint tPoint, currentpoint, endpoint, testpoint, nextPoint;
     private TMapMarkerItem tItem;
 
     private Button searchBtn, buttonSearch;
@@ -82,6 +89,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     Intent i;
     String key = "";
     double latitude, longitude;
+    float dist;
 
     TextToSpeech tts;
 
@@ -89,6 +97,11 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         public void handleMessage(Message message){
             Log.d("----", "검색 결과 핸들러");
             mAdapter.notifyDataSetChanged();
+        }
+    };
+    final Handler handler2 = new Handler(){
+        public void handleMessage(Message message){
+            Log.d("----",""+dist);
         }
     };
 
@@ -124,9 +137,31 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         sRecognizer.setRecognitionListener(listener);   //리스너 설정
     }
 
+    //목적지 선택 확인창
+    public void selectConfirm(int pos){
+        final int index = pos;
+        speakTTS(poiNameArr.get(index).getPOI_name()+"을 선택했습니다.");
+
+        new AlertDialog.Builder(this.getContext()).setTitle("목적지 선택").setMessage(poiNameArr.get(index).getPOI_name()+" 선택")
+                .setPositiveButton("네", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                endpoint = poiNameArr.get(index).getPOI_latlng();
+                GetDirections();
+                distTest(index);
+            }
+        }).setNegativeButton("아니오", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                speakTTS("목적지 선택을 취소했습니다.");
+            }
+        }).show();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
+//        currentpoint = new TMapPoint(35.896288, 128.621855);
         setGps();
         //TTS 설정
         tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
@@ -174,15 +209,18 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         searchBar = view.findViewById(R.id.search_bar);
 
         poiNameArr = new ArrayList<>();
+        pointArr = new ArrayList<>();
+
         mAdapter = new Adapter(poiNameArr);
         mAdapter.setOnItemClickListener(new Adapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                endpoint = poiNameArr.get(position).getPOI_latlng();
-                Log.d("----TAG", String.valueOf(endpoint));
-                speakTTS(poiNameArr.get(position).getPOI_name()+"을 선택했습니다.");
-                GetDirections();
-                distTest(position);
+                selectConfirm(position);
+//                endpoint = poiNameArr.get(position).getPOI_latlng();
+//                Log.d("----TAG", String.valueOf(endpoint));
+//                speakTTS(poiNameArr.get(position).getPOI_name()+"을 선택했습니다.");
+//                GetDirections();
+//                distTest(position);
             }
         });
         rv.setAdapter(mAdapter);
@@ -202,9 +240,9 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             hashmap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
             tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, hashmap);
         }
-
     }
 
+    //현재 위치 리스너
     private LocationListener mLocationListener = new LocationListener() {
         public void onLocationChanged(Location location) {
             if (location != null) {
@@ -212,9 +250,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                 longitude = location.getLongitude();
                 tmapView.setLocationPoint(longitude, latitude);
                 tmapView.setCenterPoint(longitude, latitude);
-
                 currentpoint = new TMapPoint(latitude, longitude);
-                speechTextView.setText(latitude+"/"+longitude);
             }
         }
 
@@ -230,8 +266,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     //현재위치 받기
     public void setGps() {
-        //현재 위치 리스너
-
         lm = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -278,10 +312,15 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     //경로 데이터 얻기
     public void GetDirections() {
-        final ArrayList<String> descArr = new ArrayList<String>();
-        final ArrayList<TMapPoint> pointArr = new ArrayList<TMapPoint>();
-        descArr.clear();
-        pointArr.clear();
+//        final ArrayList<String> descArr = new ArrayList<String>();
+//        String uri = "https://api2.sktelecom.com/tmap/routes/pedestrian?appKey=l7xxb116f439ac904ca683fb4a533412e093&startX="+currentpoint.getLongitude()+"&startY="+currentpoint.getLatitude()+
+//                "&endX="+endpoint.getLongitude()+"&endY="+endpoint.getLatitude() +"&reqCoordType=WGS84GEO&resCoordType=WGS84GEO&format=json&startName=start&endName=end";
+//        Log.d("----debug----", "URI: "+uri);
+
+
+        if(pointArr.size()>0){
+            pointArr.clear();
+        }
 
         tData.findPathDataAllType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataAllListenerCallback() {
             @Override
@@ -295,7 +334,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                     for(int j = 0; j < nodeListPlacemarkItem.getLength(); j++) {
                         if(nodeListPlacemarkItem.item(j).getNodeName().equals("tmap:nodeType")) {
                             if(nodeListPlacemarkItem.item(j).getTextContent().equals("POINT")) {    //tmap:nodeType의 값이 POINT인지 판별
-                                descArr.add(nodeListPlacemarkItem.item(7).getTextContent());    //길 안내 정보 배열로 만듦
+//                                descArr.add(nodeListPlacemarkItem.item(7).getTextContent());    //길 안내 정보 배열로 만듦
+                                desc_str = nodeListPlacemarkItem.item(7).getTextContent();
                                 Log.d("----", nodeListPlacemarkItem.item(7).getTextContent());
                             }
                         }
@@ -304,14 +344,16 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                             String pointLatLng = nodeListPlacemarkItem.item(j).getTextContent().trim();
                             String[] latlng = pointLatLng.split(",");
                             TMapPoint pathPoint = new TMapPoint(Double.valueOf(latlng[1]),Double.valueOf(latlng[0]));
+                            pPonit = new PathPoint(pathPoint,desc_str);
+                            pointArr.add(pPonit);
 
-                            pointArr.add(pathPoint);
                             Log.d("path", "----point----: "+pathPoint);
                         }
                     }
                 }
-                speakTTS(descArr.get(0));
-                speechTextView.setText(descArr.get(0));
+                speakTTS(pointArr.get(0).getDescript());
+                speechTextView.setText(pointArr.get(0).getDescript());
+                changeDescript();
             }
 
         });
@@ -445,14 +487,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         testpoint = new TMapPoint(35.516303, 128.915945);
 //        testpoint = new TMapPoint(35.896322, 128.620311);
         testpoint = poiNameArr.get(position).getPOI_latlng();
-
-        TMapCircle tCircle = new TMapCircle();
-        tCircle.setCenterPoint(testpoint);
-        tCircle.setRadius(50);
-        tCircle.setAreaColor(Color.GRAY);
-        tCircle.setAreaAlpha(100);
-        tmapView.addTMapCircle("circle1", tCircle);
-
         float dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
 
         //횡단보도에 쓸거
@@ -474,7 +508,35 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
         return distance;
     }
-    
+
+    //안내문 바뀌는거
+    public void changeDescript(){
+//        while(true){
+            Log.d("----","단계: "+pointArr.size());
+            nextPoint = new TMapPoint(pointArr.get(1).getpath_latlng().getLatitude(),pointArr.get(1).getpath_latlng().getLongitude());
+            TMapCircle tCircle = new TMapCircle();
+            tCircle.setCenterPoint(nextPoint);
+            tCircle.setRadius(5);
+            tCircle.setAreaColor(Color.GRAY);
+            tCircle.setAreaAlpha(100);
+            tmapView.addTMapCircle("circle1", tCircle);
+
+            dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+            if(dist==5){
+                speechTextView.setText(pointArr.get(1).getDescript());
+                speakTTS(pointArr.get(1).getDescript());
+//                break;
+            }
+
+            new Thread(){
+                public void run(){
+                    Message msg = handler2.obtainMessage();
+                    handler2.sendMessage(msg);
+                }
+            }.start();
+//        }
+    }
+
     @Override
     public void onLocationChange(Location location) {
         tmapView.setLocationPoint(location.getLongitude(), location.getLatitude());
