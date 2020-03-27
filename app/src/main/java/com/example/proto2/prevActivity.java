@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 public class prevActivity extends AppCompatActivity {
 
@@ -20,20 +19,21 @@ public class prevActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prev);
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.RECORD_AUDIO}, 1);
-            Log.d("----", "퍼미션 요청");
-        }
+        //최초 실행 여부 판단
+        SharedPreferences pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
 
         Button btn = findViewById(R.id.button6);
 
-        //최초 실행 여부 판단
-        SharedPreferences pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
-        boolean isFirst = pref.getBoolean("isFirst", false);
-        if(isFirst == false){ //최초 실행시 할 일
+        boolean isFirst = pref.getBoolean("isFirst", true);
+        if(isFirst == true){ //최초 실행시 할 일
             SharedPreferences.Editor editor = pref.edit();
-            editor.putBoolean("isFirst", true);
+            editor.putBoolean("isFirst", false);
             editor.commit();
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.RECORD_AUDIO}, 1);
+                Log.d("----", "퍼미션 요청");
+            }
 
             btn.setOnClickListener(new View.OnClickListener() {
                 @Override

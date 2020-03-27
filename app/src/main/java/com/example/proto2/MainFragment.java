@@ -81,6 +81,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     private TMapView tmapView;
     private TMapPoint tPoint, currentpoint, endpoint, testpoint, nextPoint;
     private TMapMarkerItem tItem;
+    private TMapCircle tCircle;
 
     private Button searchBtn, buttonSearch;
     private TextView speechTextView;
@@ -95,7 +96,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     float dist;
 
     TextToSpeech tts;
-    TimerTask timerTask;
+    static TimerTask tt;
+    final Timer timer = new Timer();
 
     final Handler handler = new Handler(){
         public void handleMessage(Message message){
@@ -111,6 +113,16 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    public TimerTask timerTask(){
+        TimerTask tempTask = new TimerTask() {
+            @Override
+            public void run() {
+                changeDescript();
+            }
+        };
+        return tempTask;
     }
 
     @Override
@@ -134,13 +146,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");   //음성 번역 언어
         sRecognizer = SpeechRecognizer.createSpeechRecognizer(getContext());    //새 SpeechRecognizer를 만드는 팩토리 메서드
         sRecognizer.setRecognitionListener(listener);   //리스너 설정
-
-        timerTask = new TimerTask(){
-            @Override
-            public void run() {
-                changeDescript();
-            }
-        };
     }
 
     //목적지 선택 확인창
@@ -167,8 +172,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
-//        currentpoint = new TMapPoint(35.896288, 128.621855);
         setGps();
+
         //TTS 설정
         tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -222,11 +227,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             @Override
             public void onItemClick(View view, int position) {
                 selectConfirm(position);
-//                endpoint = poiNameArr.get(position).getPOI_latlng();
-//                Log.d("----TAG", String.valueOf(endpoint));
-//                speakTTS(poiNameArr.get(position).getPOI_name()+"을 선택했습니다.");
-//                GetDirections();
-//                distTest(position);
             }
         });
         rv.setAdapter(mAdapter);
@@ -360,8 +360,9 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                 speakTTS(pointArr.get(0).getDescript());
                 speechTextView.setText(pointArr.get(0).getDescript());
 
-                Timer timer = new Timer();
-                timer.schedule(timerTask, 0, 3000);
+                tt = timerTask();
+                timer.schedule(tt,0,3000);
+                Log.d("----","타이머 실행");
             }
 
         });
@@ -520,29 +521,32 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     final Handler handler2 = new Handler(){
         public void handleMessage(Message message){
+            nextPoint = new TMapPoint(pointArr.get(count).getpath_latlng().getLatitude(),pointArr.get(count).getpath_latlng().getLongitude());tCircle = new TMapCircle();
+            tCircle.setCenterPoint(nextPoint);
+            tCircle.setRadius(5);
+            tCircle.setAreaColor(Color.GRAY);
+            tCircle.setAreaAlpha(100);
+            tmapView.addTMapCircle("circle1", tCircle);
+            dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+
             if(dist<=5){
                 speechTextView.setText(pointArr.get(count).getDescript());
                 speakTTS(pointArr.get(count).getDescript());
                 count++;
-                if(count == pointArr.size()-1){
-                    timerTask.cancel();
-                    speakTTS("길안내가 종료되었습니다");
-                }
+            }
+
+            if(count == pointArr.size()){
+                tt.cancel();
+                Log.d("----","타이머 종료");
+                speakTTS("목적지에 도착했습니다.");
+                tmapView.removeAllTMapCircle();
+                count = 1;
             }
         }
     };
 
     //안내문 바뀌는거
     public void changeDescript(){
-        nextPoint = new TMapPoint(pointArr.get(count).getpath_latlng().getLatitude(),pointArr.get(count).getpath_latlng().getLongitude());
-        TMapCircle tCircle = new TMapCircle();
-        tCircle.setCenterPoint(nextPoint);
-        tCircle.setRadius(5);
-        tCircle.setAreaColor(Color.GRAY);
-        tCircle.setAreaAlpha(100);
-        tmapView.addTMapCircle("circle1", tCircle);
-
-        dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
         new Thread(){
             public void run(){
                 Message msg = handler2.obtainMessage();
