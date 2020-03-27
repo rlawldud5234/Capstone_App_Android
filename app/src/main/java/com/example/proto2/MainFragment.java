@@ -56,6 +56,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class MainFragment extends Fragment implements TMapGpsManager.onLocationChangedCallback {
@@ -73,6 +75,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     private String title;
     private int page;
+    int count = 1;
 
     private TMapData tData;
     private TMapView tmapView;
@@ -92,16 +95,12 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     float dist;
 
     TextToSpeech tts;
+    TimerTask timerTask;
 
     final Handler handler = new Handler(){
         public void handleMessage(Message message){
             Log.d("----", "검색 결과 핸들러");
             mAdapter.notifyDataSetChanged();
-        }
-    };
-    final Handler handler2 = new Handler(){
-        public void handleMessage(Message message){
-            Log.d("----",""+dist);
         }
     };
 
@@ -135,6 +134,13 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");   //음성 번역 언어
         sRecognizer = SpeechRecognizer.createSpeechRecognizer(getContext());    //새 SpeechRecognizer를 만드는 팩토리 메서드
         sRecognizer.setRecognitionListener(listener);   //리스너 설정
+
+        timerTask = new TimerTask(){
+            @Override
+            public void run() {
+                changeDescript();
+            }
+        };
     }
 
     //목적지 선택 확인창
@@ -148,7 +154,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             public void onClick(DialogInterface dialog, int which) {
                 endpoint = poiNameArr.get(index).getPOI_latlng();
                 GetDirections();
-                distTest(index);
+//                distTest(index);
             }
         }).setNegativeButton("아니오", new DialogInterface.OnClickListener() {
             @Override
@@ -313,9 +319,9 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     //경로 데이터 얻기
     public void GetDirections() {
 //        final ArrayList<String> descArr = new ArrayList<String>();
-//        String uri = "https://api2.sktelecom.com/tmap/routes/pedestrian?appKey=l7xxb116f439ac904ca683fb4a533412e093&startX="+currentpoint.getLongitude()+"&startY="+currentpoint.getLatitude()+
-//                "&endX="+endpoint.getLongitude()+"&endY="+endpoint.getLatitude() +"&reqCoordType=WGS84GEO&resCoordType=WGS84GEO&format=json&startName=start&endName=end";
-//        Log.d("----debug----", "URI: "+uri);
+        String uri = "https://api2.sktelecom.com/tmap/routes/pedestrian?appKey=l7xxb116f439ac904ca683fb4a533412e093&startX="+currentpoint.getLongitude()+"&startY="+currentpoint.getLatitude()+
+                "&endX="+endpoint.getLongitude()+"&endY="+endpoint.getLatitude() +"&reqCoordType=WGS84GEO&resCoordType=WGS84GEO&format=json&startName=start&endName=end";
+        Log.d("----debug----", "URI: "+uri);
 
 
         if(pointArr.size()>0){
@@ -353,7 +359,9 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                 }
                 speakTTS(pointArr.get(0).getDescript());
                 speechTextView.setText(pointArr.get(0).getDescript());
-                changeDescript();
+
+                Timer timer = new Timer();
+                timer.schedule(timerTask, 0, 3000);
             }
 
         });
@@ -497,6 +505,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         }
     }
 
+    //거리계산
     public float DistnaceDgree(double lat1, double lng1, double lat2, double lng2) {
         Location point1 = new Location("Point A");
         Location point2 = new Location("Point B");
@@ -509,32 +518,37 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         return distance;
     }
 
+    final Handler handler2 = new Handler(){
+        public void handleMessage(Message message){
+            if(dist<=5){
+                speechTextView.setText(pointArr.get(count).getDescript());
+                speakTTS(pointArr.get(count).getDescript());
+                count++;
+                if(count == pointArr.size()-1){
+                    timerTask.cancel();
+                    speakTTS("길안내가 종료되었습니다");
+                }
+            }
+        }
+    };
+
     //안내문 바뀌는거
     public void changeDescript(){
-//        while(true){
-            Log.d("----","단계: "+pointArr.size());
-            nextPoint = new TMapPoint(pointArr.get(1).getpath_latlng().getLatitude(),pointArr.get(1).getpath_latlng().getLongitude());
-            TMapCircle tCircle = new TMapCircle();
-            tCircle.setCenterPoint(nextPoint);
-            tCircle.setRadius(5);
-            tCircle.setAreaColor(Color.GRAY);
-            tCircle.setAreaAlpha(100);
-            tmapView.addTMapCircle("circle1", tCircle);
+        nextPoint = new TMapPoint(pointArr.get(count).getpath_latlng().getLatitude(),pointArr.get(count).getpath_latlng().getLongitude());
+        TMapCircle tCircle = new TMapCircle();
+        tCircle.setCenterPoint(nextPoint);
+        tCircle.setRadius(5);
+        tCircle.setAreaColor(Color.GRAY);
+        tCircle.setAreaAlpha(100);
+        tmapView.addTMapCircle("circle1", tCircle);
 
-            dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
-            if(dist==5){
-                speechTextView.setText(pointArr.get(1).getDescript());
-                speakTTS(pointArr.get(1).getDescript());
-//                break;
+        dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+        new Thread(){
+            public void run(){
+                Message msg = handler2.obtainMessage();
+                handler2.sendMessage(msg);
             }
-
-            new Thread(){
-                public void run(){
-                    Message msg = handler2.obtainMessage();
-                    handler2.sendMessage(msg);
-                }
-            }.start();
-//        }
+        }.start();
     }
 
     @Override
