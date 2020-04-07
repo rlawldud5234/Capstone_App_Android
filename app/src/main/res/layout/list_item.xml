@@ -9,5 +9,5 @@
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         android:text="TextView"
-        android:textSize="24dp" />
+        android:textSize="22dp" />
 </LinearLayout>

@@ -18,7 +18,6 @@ public class prevActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prev);
-
         //최초 실행 여부 판단
         SharedPreferences pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
 

@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -65,6 +66,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     private static final String ARG_PARAM2 = "param2";
     String desc_str;
 
+    SQLiteDatabase sql;
+
     private ArrayList<Dictionary> poiNameArr;
     private ArrayList<PathPoint> pointArr;
     private Adapter mAdapter;
@@ -84,7 +87,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     private TMapCircle tCircle;
 
     private Button searchBtn, buttonSearch;
-    private TextView speechTextView;
+    private TextView speechTextView, cwTextView;
     private EditText searchBar;
 
     LocationManager lm;
@@ -95,9 +98,12 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     double latitude, longitude;
     float dist;
 
+    DBHelper helper;
+
     TextToSpeech tts;
-    static TimerTask tt;
+    static TimerTask tt, tl;
     final Timer timer = new Timer();
+    final Timer tl_timer = new Timer();
 
     final Handler handler = new Handler(){
         public void handleMessage(Message message){
@@ -125,6 +131,16 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         return tempTask;
     }
 
+    public TimerTask tl_timertask(){
+        TimerTask tl_tempTask = new TimerTask() {
+            @Override
+            public void run() {
+                distTest();
+            }
+        };
+        return tl_tempTask;
+    }
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -146,6 +162,9 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");   //음성 번역 언어
         sRecognizer = SpeechRecognizer.createSpeechRecognizer(getContext());    //새 SpeechRecognizer를 만드는 팩토리 메서드
         sRecognizer.setRecognitionListener(listener);   //리스너 설정
+
+        helper = new DBHelper(getContext(), "TrafficLight.db", null, 1);
+        helper.insert();
     }
 
     //목적지 선택 확인창
@@ -159,7 +178,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             public void onClick(DialogInterface dialog, int which) {
                 endpoint = poiNameArr.get(index).getPOI_latlng();
                 GetDirections();
-//                distTest(index);
             }
         }).setNegativeButton("아니오", new DialogInterface.OnClickListener() {
             @Override
@@ -214,6 +232,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             @Override
             public void onClick(View view) {
                 speakDestination();
+                tt.cancel();
             }
         });
 
@@ -232,6 +251,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         rv.setAdapter(mAdapter);
 
         speechTextView = (TextView) view.findViewById(R.id.speechView);
+        cwTextView = (TextView) view.findViewById(R.id.cw_textView);
 
         return view;
     }
@@ -362,6 +382,10 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
                 tt = timerTask();
                 timer.schedule(tt,0,3000);
+
+                tl = tl_timertask();
+                tl_timer.schedule(tl, 0, 9000);
+
                 Log.d("----","타이머 실행");
             }
 
@@ -491,21 +515,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         speakTTS(key);
     }
 
-    //범위 테스트
-    public void distTest(int position){
-        testpoint = new TMapPoint(35.516303, 128.915945);
-//        testpoint = new TMapPoint(35.896322, 128.620311);
-        testpoint = poiNameArr.get(position).getPOI_latlng();
-        float dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
-
-        //횡단보도에 쓸거
-        if(dist<50){
-            speechTextView.setText("범위 안에 있습니다");
-        } else {
-            speechTextView.setText("두 지점 사이의 거리: "+dist);
-        }
-    }
-
     //거리계산
     public float DistnaceDgree(double lat1, double lng1, double lat2, double lng2) {
         Location point1 = new Location("Point A");
@@ -519,14 +528,38 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         return distance;
     }
 
+    //범위 테스트
+    public void distTest(){
+        String tl_str = helper.getContact(3);
+        String[] tl_arr = tl_str.split(",");
+
+        testpoint = new TMapPoint(Double.valueOf(tl_arr[0]), Double.valueOf(tl_arr[1]));
+
+        TMapCircle tlCircle = new TMapCircle();
+        tlCircle.setCenterPoint(testpoint);
+        tlCircle.setRadius(3);
+        tlCircle.setAreaColor(Color.RED);
+        tlCircle.setAreaAlpha(100);
+        tmapView.addTMapCircle("tl_circle", tlCircle);
+
+        float tl_dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+
+        if(tl_dist<=3){
+            speakTTS("근처에 횡단보도가 있습니다.");
+            Log.d("----","타이머 종료");
+            tl.cancel();
+        }
+    }
+
     final Handler handler2 = new Handler(){
         public void handleMessage(Message message){
-            nextPoint = new TMapPoint(pointArr.get(count).getpath_latlng().getLatitude(),pointArr.get(count).getpath_latlng().getLongitude());tCircle = new TMapCircle();
+            nextPoint = new TMapPoint(pointArr.get(count).getpath_latlng().getLatitude(),pointArr.get(count).getpath_latlng().getLongitude());
+            tCircle = new TMapCircle();
             tCircle.setCenterPoint(nextPoint);
             tCircle.setRadius(5);
             tCircle.setAreaColor(Color.GRAY);
             tCircle.setAreaAlpha(100);
-            tmapView.addTMapCircle("circle1", tCircle);
+            tmapView.addTMapCircle("circle", tCircle);
             dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
 
             if(dist<=5){

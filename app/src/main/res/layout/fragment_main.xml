@@ -21,6 +21,14 @@
             android:orientation="vertical">
 
 
+            <TextView
+                android:id="@+id/cw_textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/BackGround"
+                android:textColor="@color/textcolor"
+                android:textSize="20dp" />
+
             <LinearLayout
                 android:id="@+id/TMapLayout"
                 android:layout_width="match_parent"
@@ -37,7 +45,7 @@
                 android:id="@+id/linearLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:orientation="vertical"
                 app:layout_constraintTop_toBottomOf="@+id/TMapLayout">
@@ -60,8 +68,8 @@
                         android:id="@+id/buttonSearch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18dp"
-                        android:text="장소검색" />
+                        android:text="장소검색"
+                        android:textSize="18dp" />
                 </LinearLayout>
 
                 <Button
@@ -69,8 +77,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textSize="18dp"
-                    android:text="음성인식" />
+                    android:text="음성인식"
+                    android:textSize="18dp" />
 
             </LinearLayout>
 
@@ -79,11 +87,10 @@
                 android:id="@+id/speechView"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:text=""
                 android:textColor="@color/textcolor"
-                android:textSize="24sp"
+                android:textSize="24dp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toTopOf="@+id/recycler_poi"
                 app:layout_constraintEnd_toEndOf="parent"
