@@ -342,11 +342,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         String uri = "https://api2.sktelecom.com/tmap/routes/pedestrian?appKey=l7xxb116f439ac904ca683fb4a533412e093&startX="+currentpoint.getLongitude()+"&startY="+currentpoint.getLatitude()+
                 "&endX="+endpoint.getLongitude()+"&endY="+endpoint.getLatitude() +"&reqCoordType=WGS84GEO&resCoordType=WGS84GEO&format=json&startName=start&endName=end";
         Log.d("----debug----", "URI: "+uri);
-
-
-        if(pointArr.size()>0){
-            pointArr.clear();
-        }
+        pointArr.clear();
 
         tData.findPathDataAllType(TMapData.TMapPathType.PEDESTRIAN_PATH, currentpoint, endpoint, new TMapData.FindPathDataAllListenerCallback() {
             @Override
@@ -530,25 +526,48 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     //범위 테스트
     public void distTest(){
-        String tl_str = helper.getContact(3);
+//        String tl_str = helper.getContact(3);
+//        String[] tl_arr = tl_str.split(",");
+
+        String tl_str = helper.getResult();
         String[] tl_arr = tl_str.split(",");
+        float min = 3;
 
-        testpoint = new TMapPoint(Double.valueOf(tl_arr[0]), Double.valueOf(tl_arr[1]));
+        for(int i = 0;i<tl_arr.length;i+=2 ){
+            testpoint = new TMapPoint(Double.valueOf(tl_arr[i]), Double.valueOf(tl_arr[i+1]));
 
-        TMapCircle tlCircle = new TMapCircle();
-        tlCircle.setCenterPoint(testpoint);
-        tlCircle.setRadius(3);
-        tlCircle.setAreaColor(Color.RED);
-        tlCircle.setAreaAlpha(100);
-        tmapView.addTMapCircle("tl_circle", tlCircle);
+            TMapCircle tlCircle = new TMapCircle();
+            tlCircle.setCenterPoint(testpoint);
+            tlCircle.setRadius(3);
+            tlCircle.setAreaColor(Color.RED);
+            tlCircle.setAreaAlpha(100);
+            tmapView.addTMapCircle("tl_circle"+i, tlCircle);
 
-        float tl_dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
-
-        if(tl_dist<=3){
-            speakTTS("근처에 횡단보도가 있습니다.");
-            Log.d("----","타이머 종료");
-            tl.cancel();
+            float tl_dist =  DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+            if(min>tl_dist){
+                min = tl_dist;
+                speakTTS("근처에 횡단보도가 있습니다.");
+                Log.d("----","타이머 종료");
+                tl.cancel();
+            }
         }
+
+//        testpoint = new TMapPoint(Double.valueOf(tl_arr[0]), Double.valueOf(tl_arr[1]));
+
+//        TMapCircle tlCircle = new TMapCircle();
+//        tlCircle.setCenterPoint(testpoint);
+//        tlCircle.setRadius(3);
+//        tlCircle.setAreaColor(Color.RED);
+//        tlCircle.setAreaAlpha(100);
+//        tmapView.addTMapCircle("tl_circle", tlCircle);
+
+//        float tl_dist = DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+//
+//        if(tl_dist<=3){
+//            speakTTS("근처에 횡단보도가 있습니다.");
+//            Log.d("----","타이머 종료");
+//            tl.cancel();
+//        }
     }
 
     final Handler handler2 = new Handler(){

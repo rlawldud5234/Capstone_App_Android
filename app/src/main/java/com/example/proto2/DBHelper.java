@@ -37,17 +37,19 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    //전부
     public String getResult(){
         SQLiteDatabase db = getReadableDatabase();
         String result = "";
 
         Cursor cursor = db.rawQuery("SELECT * FROM TrafficLight", null);
         while(cursor.moveToNext()){
-            result += cursor.getString(1)+","+cursor.getString(2)+"\n";
+            result += cursor.getString(cursor.getColumnIndex("trafficlight_lat"))+","+cursor.getString(cursor.getColumnIndex("trafficlight_lng"))+",";
         }
         return result;
     }
 
+    //하나만
     public String getContact(int id){
         SQLiteDatabase db = getReadableDatabase();
         String result = "";
