@@ -1,18 +1,18 @@
 package com.example.proto2;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 
 public class MainActivity extends AppCompatActivity {
     FragmentPagerAdapter adapterViewPager;
     ViewPager vpPager;
+    static boolean checkFirst;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +24,10 @@ public class MainActivity extends AppCompatActivity {
 
         vpPager.setAdapter(adapterViewPager);
         vpPager.setCurrentItem(1);
+
+        Intent intent = getIntent();
+        checkFirst = intent.getExtras().getBoolean("FirstCheck");
+        String test = String.valueOf(checkFirst);
     }
 
 
@@ -46,11 +50,11 @@ public class MainActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    return LeftFragment.newInstance("0", "Page # 1");
+                    return LeftFragment.newInstance("0", "Page #1");
                 case 1:
-                    return MainFragment.newInstance("1", "Page # 2");
+                    return MainFragment.newInstance("1", String.valueOf(checkFirst));
                 case 2:
-                    return RightFragment.newInstance("2", "Page # 3");
+                    return RightFragment.newInstance("2", "Page #3");
                 default:
                     return null;
             }

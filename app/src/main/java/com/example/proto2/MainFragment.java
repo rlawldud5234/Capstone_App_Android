@@ -64,9 +64,8 @@ import java.util.TimerTask;
 public class MainFragment extends Fragment implements TMapGpsManager.onLocationChangedCallback {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private String bcheck;
     String desc_str;
-
-    SQLiteDatabase sql;
 
     private ArrayList<Dictionary> poiNameArr;
     private ArrayList<PathPoint> pointArr;
@@ -82,7 +81,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     private TMapData tData;
     private TMapView tmapView;
-    private TMapPoint tPoint, currentpoint, endpoint, testpoint, nextPoint;
+    private TMapPoint tPoint, currentpoint, endpoint, testpoint1, testpoint2, nextPoint;
     private TMapMarkerItem tItem;
     private TMapCircle tCircle;
 
@@ -114,10 +113,13 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     public static MainFragment newInstance(String param1, String param2) {
         MainFragment fragment = new MainFragment();
+        String p1 = param1;
+        String p2 = param2;
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putString(ARG_PARAM1, p1);
+        args.putString(ARG_PARAM2, p2);
         fragment.setArguments(args);
+
         return fragment;
     }
 
@@ -156,6 +158,10 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         page = getArguments().getInt("someInt", 0);
         title = getArguments().getString("someTitle");
 
+        if(getArguments() != null){
+            bcheck = getArguments().getString(ARG_PARAM2);
+        }
+
         //음성 인식 intent 설정
         i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);   //활동 시작
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -163,8 +169,10 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         sRecognizer = SpeechRecognizer.createSpeechRecognizer(getContext());    //새 SpeechRecognizer를 만드는 팩토리 메서드
         sRecognizer.setRecognitionListener(listener);   //리스너 설정
 
-        helper = new DBHelper(getContext(), "TrafficLight.db", null, 1);
-        helper.insert();
+        helper = new DBHelper(getContext(), "MapData.db", null, 1);
+        if(Boolean.valueOf(bcheck)){   //처음실행했을 때 데이터 삽입
+            helper.insert();
+        }
     }
 
     //목적지 선택 확인창
@@ -251,7 +259,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         rv.setAdapter(mAdapter);
 
         speechTextView = (TextView) view.findViewById(R.id.speechView);
-        cwTextView = (TextView) view.findViewById(R.id.cw_textView);
 
         return view;
     }
@@ -529,24 +536,46 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 //        String tl_str = helper.getContact(3);
 //        String[] tl_arr = tl_str.split(",");
 
-        String tl_str = helper.getResult();
+        String tl_str = helper.getResultTL();
+        String bs_str = helper.getResultBS();
         String[] tl_arr = tl_str.split(",");
+        String[] bs_arr = bs_str.split(",");
+
         float min = 3;
 
         for(int i = 0;i<tl_arr.length;i+=2 ){
-            testpoint = new TMapPoint(Double.valueOf(tl_arr[i]), Double.valueOf(tl_arr[i+1]));
+            testpoint1 = new TMapPoint(Double.valueOf(tl_arr[i]), Double.valueOf(tl_arr[i+1]));
 
             TMapCircle tlCircle = new TMapCircle();
-            tlCircle.setCenterPoint(testpoint);
+            tlCircle.setCenterPoint(testpoint1);
             tlCircle.setRadius(3);
             tlCircle.setAreaColor(Color.RED);
             tlCircle.setAreaAlpha(100);
-            tmapView.addTMapCircle("tl_circle"+i, tlCircle);
+            tmapView.addTMapCircle("mcircle"+i, tlCircle);
 
-            float tl_dist =  DistnaceDgree(testpoint.getLatitude(), testpoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+            float tl_dist =  DistnaceDgree(testpoint1.getLatitude(), testpoint1.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
             if(min>tl_dist){
                 min = tl_dist;
                 speakTTS("근처에 횡단보도가 있습니다.");
+                Log.d("----","타이머 종료");
+                tl.cancel();
+            }
+        }
+
+        for(int j = 0;j<bs_arr.length;j+=2 ){
+            testpoint2 = new TMapPoint(Double.valueOf(bs_arr[j]), Double.valueOf(bs_arr[j+1]));
+
+            TMapCircle tlCircle = new TMapCircle();
+            tlCircle.setCenterPoint(testpoint2);
+            tlCircle.setRadius(3);
+            tlCircle.setAreaColor(Color.YELLOW);
+            tlCircle.setAreaAlpha(100);
+            tmapView.addTMapCircle("bscircle"+j, tlCircle);
+
+            float tl_dist =  DistnaceDgree(testpoint2.getLatitude(), testpoint2.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
+            if(min>tl_dist){
+                min = tl_dist;
+                speakTTS("근처에 버스정류장이 있습니다.");
                 Log.d("----","타이머 종료");
                 tl.cancel();
             }
