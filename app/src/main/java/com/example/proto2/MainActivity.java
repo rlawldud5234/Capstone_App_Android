@@ -8,6 +8,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Window;
 
 public class MainActivity extends AppCompatActivity {
     FragmentPagerAdapter adapterViewPager;
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -23,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         adapterViewPager = new MyPagerAdapter(getSupportFragmentManager());
 
         vpPager.setAdapter(adapterViewPager);
-        vpPager.setCurrentItem(1);
+        vpPager.setCurrentItem(0);
 
         Intent intent = getIntent();
         checkFirst = intent.getExtras().getBoolean("FirstCheck");
@@ -33,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public static class MyPagerAdapter extends FragmentPagerAdapter {
-        private static int NUM_ITEMS = 3;
+        private static int NUM_ITEMS = 2;
 
         public MyPagerAdapter(FragmentManager fragmentManager) {
             super(fragmentManager);
@@ -50,11 +52,9 @@ public class MainActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    return LeftFragment.newInstance("0", "Page #1");
-                case 1:
                     return MainFragment.newInstance("1", String.valueOf(checkFirst));
-                case 2:
-                    return RightFragment.newInstance("2", "Page #3");
+                case 1:
+                    return RightFragment.newInstance("2", "Page");
                 default:
                     return null;
             }

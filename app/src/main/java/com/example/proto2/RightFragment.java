@@ -15,7 +15,7 @@ public class RightFragment extends Fragment{
 
     private String title;
     private int page;
-    private Button textbtn;
+    private Button textbtn, setbtn, helpbtn;
 
 
     public static RightFragment newInstance(String param1, String param2) {
@@ -43,6 +43,14 @@ public class RightFragment extends Fragment{
             @Override
             public void onClick(View view){
                 Intent intent = new Intent(getActivity(), TextRecognition.class);
+                startActivity(intent);
+            }
+        });
+        helpbtn = view.findViewById(R.id.helpBtn);
+        helpbtn.setOnClickListener(new Button.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                Intent intent = new Intent(getActivity(), helpsActivity.class);
                 startActivity(intent);
             }
         });

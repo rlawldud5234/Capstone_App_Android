@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -18,7 +17,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,7 +36,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.skt.Tmap.TMapCircle;
 import com.skt.Tmap.TMapData;
@@ -53,7 +50,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -84,9 +80,10 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     private TMapPoint tPoint, currentpoint, endpoint, testpoint1, testpoint2, nextPoint;
     private TMapMarkerItem tItem;
     private TMapCircle tCircle;
+    private TMapGpsManager gpsManager = null;
 
     private Button searchBtn, buttonSearch;
-    private TextView speechTextView, cwTextView;
+    private TextView speechTextView;
     private EditText searchBar;
 
     LocationManager lm;
@@ -230,7 +227,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         buttonSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                searchDestination();
+                String dest = searchBar.getText().toString();
+                searchDestination(dest);
 
             }
         });
@@ -240,7 +238,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             @Override
             public void onClick(View view) {
                 speakDestination();
-                tt.cancel();
+//                tt.cancel();
             }
         });
 
@@ -284,6 +282,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                 tmapView.setLocationPoint(longitude, latitude);
                 tmapView.setCenterPoint(longitude, latitude);
                 currentpoint = new TMapPoint(latitude, longitude);
+                helper.insertUP(String.valueOf(latitude),String.valueOf(longitude));
             }
         }
 
@@ -299,6 +298,13 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
     //현재위치 받기
     public void setGps() {
+        gpsManager = new TMapGpsManager(getContext());
+        gpsManager.setMinTime(1000);
+        gpsManager.setMinDistance(1);
+        gpsManager.setProvider(gpsManager.NETWORK_PROVIDER);
+
+        gpsManager.OpenGps();
+
         lm = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -310,8 +316,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     }
 
     //장소 검색
-    protected void searchDestination() {
-        String dest = searchBar.getText().toString();
+    protected void searchDestination(String dest) {
+//        String dest = searchBar.getText().toString();
         Log.d("----debug----", "검색어: "+dest);
         speakTTS(dest+"을 검색했습니다");
 
@@ -323,22 +329,27 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         tData.findAroundNamePOI(currentpoint, dest, 1, 10, new TMapData.FindAroundNamePOIListenerCallback() {
             @Override
             public void onFindAroundNamePOI(ArrayList<TMapPOIItem> poiItem) {   //지도 위치 또는 현재 위치 기준으로 검색
-                for(int i = 0; i < poiItem.size(); i++) {
-                    TMapPOIItem item = poiItem.get(i);
-                    String str_addr = item.getPOIAddress();
-                    String str_name = item.getPOIName();
-                    TMapPoint poi_point = item.getPOIPoint();
-                    data = new Dictionary(str_name, poi_point);
-                    poiNameArr.add(data);
+                try {
+                    for (int i = 0; i < poiItem.size(); i++) {
+                        TMapPOIItem item = poiItem.get(i);
+                        String str_addr = item.getPOIAddress();
+                        String str_name = item.getPOIName();
+                        TMapPoint poi_point = item.getPOIPoint();
+                        data = new Dictionary(str_name, poi_point);
+                        poiNameArr.add(data);
 
-                    Log.d("----debug----", "\n이름: "+str_name+"\n주소: "+str_addr+"\n좌표: "+poi_point.toString());
-                }
-                new Thread(){
-                    public void run(){
-                        Message msg = handler.obtainMessage();
-                        handler.sendMessage(msg);
+                        Log.d("----debug----", "\n이름: " + str_name + "\n주소: " + str_addr + "\n좌표: " + poi_point.toString());
                     }
-                }.start();
+                    new Thread() {
+                        public void run() {
+                            Message msg = handler.obtainMessage();
+                            handler.sendMessage(msg);
+                        }
+                    }.start();
+
+                } catch (NullPointerException e){
+                    speechTextView.setText("다시 검색해주세요.");
+                }
             }
         });
     }
@@ -387,7 +398,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                 timer.schedule(tt,0,3000);
 
                 tl = tl_timertask();
-                tl_timer.schedule(tl, 0, 9000);
+                tl_timer.schedule(tl, 0, 3000);
 
                 Log.d("----","타이머 실행");
             }
@@ -407,6 +418,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     //음성 인식 실행
     public void speakDestination(){
         sRecognizer.startListening(i);
+        speechTextView.setText("음성인식을 시작합니다.");
+//        speakTTS("음성인식을 시작합니다.");
     }
 
     //음성 인식 리스너
@@ -414,14 +427,13 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         @Override
         public void onReadyForSpeech(Bundle params) {
             //사용자가 말하기 시작할 준비가 되면 호출된다
-            speechTextView.setText("음성인식을 시작합니다.");
-            speakTTS("음성인식을 시작합니다.");
+            searchBtn.setTextColor(Color.YELLOW);
         }
 
         @Override
         public void onBeginningOfSpeech() {
             //사용자가 말하기 시작했을 때 호출된다
-            searchBtn.setTextColor(Color.YELLOW);
+            searchBtn.setTextColor(Color.RED);
         }
 
         @Override
@@ -493,7 +505,10 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             //인식 결과가 준비되면 호출된다.
             ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             for(int i = 0; i < matches.size() ; i++){
-                speechTextView.setText(matches.get(i));
+                String specked = matches.get(i);
+                speechTextView.setText(specked);
+                //검색 연결
+                searchDestination(specked);
             }
         }
 
@@ -530,6 +545,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
 
         return distance;
     }
+
 
     //범위 테스트
     public void distTest(){
@@ -610,7 +626,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             tmapView.addTMapCircle("circle", tCircle);
             dist = DistnaceDgree(nextPoint.getLatitude(), nextPoint.getLongitude(), currentpoint.getLatitude(), currentpoint.getLongitude());
 
-            if(dist<=5){
+            if(dist<=10){
                 speechTextView.setText(pointArr.get(count).getDescript());
                 speakTTS(pointArr.get(count).getDescript());
                 count++;

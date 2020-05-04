@@ -4,61 +4,60 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".RightFragment">
-
+    tools:context=".helpsActivity">
 
     <Button
-        android:id="@+id/textBtn"
+        android:id="@+id/howToUse"
         android:layout_width="match_parent"
         android:layout_height="120dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="8dp"
         android:background="#00ff0000"
-        android:text="문자 인식"
+        android:text="사용법 안내"
         android:textColor="@color/textcolor"
         android:textSize="36dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/thingBtn"
+        android:id="@+id/permissionGuide"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="16dp"
         android:background="#00ff0000"
-        android:text="사물 인식"
-        android:textColor="@color/textcolor"
-        android:textSize="36dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textBtn" />
-
-    <Button
-        android:id="@+id/helpBtn"
-        android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:layout_marginTop="16dp"
-        android:background="#00ff0000"
-        android:text="도움말"
+        android:text="이용 권한 안내"
         android:textColor="@color/textcolor"
         android:textSize="36dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/thingBtn" />
+        app:layout_constraintTop_toBottomOf="@+id/howToUse" />
 
     <Button
-        android:id="@+id/settingBtn"
+        android:id="@+id/opensource"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp"
         android:background="#00ff0000"
-        android:text="설정"
+        android:text="오픈소스 라이센스"
         android:textColor="@color/textcolor"
         android:textSize="36dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/helpBtn" />
+        app:layout_constraintTop_toBottomOf="@+id/permissionGuide" />
+
+    <Button
+        android:id="@+id/appInfo"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="16dp"
+        android:background="#00ff0000"
+        android:text="앱 정보"
+        android:textColor="@color/textcolor"
+        android:textSize="36dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/opensource" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

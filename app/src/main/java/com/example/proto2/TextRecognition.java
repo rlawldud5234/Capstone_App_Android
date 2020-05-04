@@ -21,8 +21,10 @@ import android.provider.MediaStore;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.Frame;
@@ -34,7 +36,7 @@ import com.theartofdev.edmodo.cropper.CropImageView;
 
 public class TextRecognition extends AppCompatActivity {
 
-    EditText mResultEt;
+    TextView mResultEt;
     ImageView mPreviewIv;
 
     private static final int CAMERA_REQUEST_CODE = 200;
@@ -53,6 +55,7 @@ public class TextRecognition extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_recognition);
         ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle("문자인식");
         actionBar.setSubtitle("click+image");
 
         mResultEt = findViewById(R.id.resultEt);
