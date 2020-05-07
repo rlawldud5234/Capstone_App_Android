@@ -30,7 +30,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light">
-        <activity android:name=".HTUActivity"></activity>
+        <activity android:name=".MagnifyingActivity"></activity>
+        <activity android:name=".HTUActivity" />
         <activity android:name=".PermissionGuideActivity" />
         <activity android:name=".helpsActivity" />
         <activity android:name=".TextRecognition" />

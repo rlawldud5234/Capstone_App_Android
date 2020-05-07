@@ -15,7 +15,7 @@ public class RightFragment extends Fragment{
 
     private String title;
     private int page;
-    private Button textbtn, setbtn, helpbtn;
+    private Button textbtn, magbtn, helpbtn;
 
 
     public static RightFragment newInstance(String param1, String param2) {
@@ -46,6 +46,16 @@ public class RightFragment extends Fragment{
                 startActivity(intent);
             }
         });
+
+        magbtn = view.findViewById(R.id.magnifyingBtn);
+        magbtn.setOnClickListener(new Button.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), MagnifyingActivity.class);
+                startActivity(i);
+            }
+        });
+
         helpbtn = view.findViewById(R.id.helpBtn);
         helpbtn.setOnClickListener(new Button.OnClickListener(){
             @Override
@@ -54,6 +64,7 @@ public class RightFragment extends Fragment{
                 startActivity(intent);
             }
         });
+
         return view;
     }
 }

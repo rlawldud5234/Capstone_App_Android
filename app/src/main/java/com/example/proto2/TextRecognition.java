@@ -13,7 +13,9 @@ import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,7 +23,6 @@ import android.provider.MediaStore;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -30,14 +31,24 @@ import android.widget.Toast;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.googlecode.tesseract.android.TessBaseAPI;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 
 public class TextRecognition extends AppCompatActivity {
 
-    TextView mResultEt;
+    EditText mResultEt;
     ImageView mPreviewIv;
+    TessBaseAPI tess;
+    String dataPath = "";
 
     private static final int CAMERA_REQUEST_CODE = 200;
     private static final int STORAGE_REQUEST_CODE = 400;
@@ -55,7 +66,6 @@ public class TextRecognition extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_recognition);
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("문자인식");
         actionBar.setSubtitle("click+image");
 
         mResultEt = findViewById(R.id.resultEt);
@@ -66,7 +76,69 @@ public class TextRecognition extends AppCompatActivity {
 
         storagePermission = new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
+        dataPath = getFilesDir() + "/tesseract/";
 
+        checkFile(new File(dataPath + "tessdata/"), "kor");
+        checkFile(new File(dataPath + "tessdata/"), "eng");
+        checkFile(new File(dataPath + "tessdata/"), "jpn");
+
+        String lang = "kor+eng+jpn";
+        tess = new TessBaseAPI();
+        tess.init(dataPath, lang);
+
+        //이미지 미리 설정
+        processImage(BitmapFactory.decodeResource(getResources(), R.drawable.shot));
+
+    }
+
+    //문자 인식 및 결과
+    public void processImage(Bitmap bitmap){
+        Toast.makeText(getApplicationContext(), "이미지가 복잡할 경우 해석 시 많은 시간이 소요될 수도 있습니다.", Toast.LENGTH_LONG).show();
+        String OCRresult = null;
+        tess.setImage(bitmap);
+        OCRresult = tess.getUTF8Text(); // getUTF8Text()를 통해 텍스트 추출 결과를 얻을 수 있다.
+        TextView OCRTextView = findViewById(R.id.resultEt);
+
+        OCRTextView.setText(OCRresult);
+    }
+
+    private void copyFiles(String lang){
+        try{
+            String filepath = dataPath + "/tessdata/" + lang + ".traineddata";
+
+            AssetManager assetManager = getAssets();
+
+            InputStream inStream = assetManager.open("tessdata/"+lang+".traineddata");
+            OutputStream outStream = new FileOutputStream(filepath);
+
+            byte[] buffer = new byte[1024];
+            int read;
+            while((read = inStream.read(buffer)) != -1 ){
+                outStream.write(buffer, 0, read);
+            }
+            outStream.flush();
+            outStream.close();
+            inStream.close();
+
+
+        }catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void checkFile(File dir, String lang) {
+        if(!dir.exists()&&dir.mkdirs()) {
+            copyFiles(lang);
+        }
+        if(dir.exists()) {
+            String datafilePath = dataPath + "/tessdata/" + lang + ".traineddata";
+            File datafile = new File(datafilePath);
+            if(!datafile.exists()) {
+                copyFiles(lang);
+            }
+        }
     }
 
     //actionbar menu
@@ -100,8 +172,8 @@ public class TextRecognition extends AppCompatActivity {
         dialog.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
+                //카메라 옵션 클릭
                 if(which == 0){
-                    //카메라 옵션 클릭
                     if(!checkCameraPermission()){
                         requestCameraPermission();
                     }
@@ -110,8 +182,8 @@ public class TextRecognition extends AppCompatActivity {
                     }
 
                 }
+                // 갤러리 옵션 클릭
                 if(which == 1){
-                    // 갤러리 옵션 클릭
                     if(!checkStoragePermission()){
                         requestStoragePermission();
                     }
@@ -201,6 +273,7 @@ public class TextRecognition extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (resultCode == RESULT_OK) {
             if (requestCode == IMAGE_PICK_GALLERY_CODE) {
                 CropImage.activity(data.getData()).setGuidelines(CropImageView.Guidelines.ON).start(this);
@@ -219,23 +292,24 @@ public class TextRecognition extends AppCompatActivity {
 
                 BitmapDrawable bitmapDrawable = (BitmapDrawable) mPreviewIv.getDrawable();
                 Bitmap bitmap = bitmapDrawable.getBitmap();
+                processImage(bitmap);
 
-                TextRecognizer recognizer = new TextRecognizer.Builder(getApplicationContext()).build();
-
-                if (!recognizer.isOperational()) {
-                    Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
-                } else {
-                    Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-                    SparseArray<TextBlock> items = recognizer.detect(frame);
-                    StringBuilder sb = new StringBuilder();
-
-                    for (int i = 0; i < items.size(); i++) {
-                        TextBlock myItem = items.valueAt(i);
-                        sb.append(myItem.getValue());
-                        sb.append("\n");
-                    }
-                    mResultEt.setText(sb.toString());
-                }
+//                TextRecognizer recognizer = new TextRecognizer.Builder(getApplicationContext()).build();
+//
+//                if (!recognizer.isOperational()) {
+//                    Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+//                } else {
+//                    Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+//                    SparseArray<TextBlock> items = recognizer.detect(frame);
+//                    StringBuilder sb = new StringBuilder();
+//
+//                    for (int i = 0; i < items.size(); i++) {
+//                        TextBlock myItem = items.valueAt(i);
+//                        sb.append(myItem.getValue());
+//                        sb.append("\n");
+//                    }
+//                    mResultEt.setText(sb.toString());
+//                }
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                 Exception error = result.getError();
                 Toast.makeText(this, "" + error, Toast.LENGTH_SHORT).show();

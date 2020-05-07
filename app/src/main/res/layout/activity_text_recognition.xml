@@ -19,7 +19,7 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="#FFF8E1"
+                app:cardBackgroundColor="#fff"
                 app:cardUseCompatPadding="true"
                 app:cardCornerRadius="3dp"
                 app:cardElevation="3dp">
@@ -30,11 +30,11 @@
                     android:padding="5dp">
                     <TextView
                         android:text="Result"
-                        android:textColor="@color/textcolor"
+                        android:textColor="@color/colorPrimary"
                         android:textSize="20sp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
-                    <TextView
+                    <EditText
                         android:id="@+id/resultEt"
                         android:hint=""
                         android:autoLink="all"
@@ -48,7 +48,7 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="#FFF8E1"
+                app:cardBackgroundColor="#fff"
                 app:cardUseCompatPadding="true"
                 app:cardCornerRadius="3dp"
                 app:cardElevation="3dp">
@@ -59,7 +59,7 @@
                     android:padding="5dp">
                     <TextView
                         android:text="Image Preview"
-                        android:textColor="@color/textcolor"
+                        android:textColor="@color/colorPrimary"
                         android:textSize="20sp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
@@ -76,4 +76,3 @@
 
     </ScrollView>
 </RelativeLayout>
-
