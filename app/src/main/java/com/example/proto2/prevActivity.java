@@ -11,16 +11,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 
 public class prevActivity extends AppCompatActivity {
     SharedPreferences pref;
+    Button navBtn, recogBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prev);
-        Button btn = findViewById(R.id.button6);
+        navBtn = findViewById(R.id.nav_button);
+        recogBtn = findViewById(R.id.recog_button);
 
         //최초 실행 여부 판단
         pref = getSharedPreferences("IsFirst" , Activity.MODE_PRIVATE);
@@ -42,20 +46,35 @@ public class prevActivity extends AppCompatActivity {
                 Log.d("----", "퍼미션 요청");
             }
 
-            btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent i = new Intent(prevActivity.this, MainActivity.class);
-                    i.putExtra("FirstCheck", isFirst);
-                    startActivity(i);
-                    finish();
-                }
-            });
-        } else {
-            Intent i = new Intent(prevActivity.this, MainActivity.class);
-            i.putExtra("FirstCheck", isFirst);
-            startActivity(i);
-            finish();
+//            navBtn.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    Intent i = new Intent(prevActivity.this, MainActivity.class);
+//                    i.putExtra("FirstCheck", isFirst);
+//                    startActivity(i);
+//                    finish();
+//                }
+//            });
         }
+
+        navBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(prevActivity.this, MainActivity.class);
+                i.putExtra("button", "nav");
+                i.putExtra("FirstCheck", isFirst);
+                startActivity(i);
+            }
+        });
+
+        recogBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(prevActivity.this, MainActivity.class);
+                i.putExtra("button", "recog");
+                i.putExtra("FirstCheck", isFirst);
+                startActivity(i);
+            }
+        });
     }
 }

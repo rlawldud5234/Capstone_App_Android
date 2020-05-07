@@ -25,17 +25,23 @@ public class MainActivity extends AppCompatActivity {
         adapterViewPager = new MyPagerAdapter(getSupportFragmentManager());
 
         vpPager.setAdapter(adapterViewPager);
-        vpPager.setCurrentItem(0);
 
         Intent intent = getIntent();
         checkFirst = intent.getExtras().getBoolean("FirstCheck");
-        String test = String.valueOf(checkFirst);
+
+        if(intent.getExtras().getString("button").equals("recog")){
+            vpPager.setCurrentItem(1);
+        }
+
+        if(intent.getExtras().getString("button").equals("nav")){
+            vpPager.setCurrentItem(2);
+        }
     }
 
 
 
     public static class MyPagerAdapter extends FragmentPagerAdapter {
-        private static int NUM_ITEMS = 2;
+        private static int NUM_ITEMS = 4;
 
         public MyPagerAdapter(FragmentManager fragmentManager) {
             super(fragmentManager);
@@ -52,9 +58,13 @@ public class MainActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    return MainFragment.newInstance("1", String.valueOf(checkFirst));
+                    return LeftFragment.newInstance("0", "Page");   //메뉴
                 case 1:
-                    return RightFragment.newInstance("2", "Page");
+                    return ObjectRecognitionFragment.newInstance("2", "page");  //사물인식
+                case 2:
+                    return MainFragment.newInstance("1", String.valueOf(checkFirst));   //길찾기
+                case 3:
+                    return RightFragment.newInstance("3", "Page");  //메뉴였던 것
                 default:
                     return null;
             }

@@ -4,11 +4,11 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
@@ -29,32 +29,49 @@ import android.media.ImageReader;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+
 import android.os.Handler;
 import android.os.HandlerThread;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
-import androidx.core.app.ActivityCompat;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.WindowManager;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class MagnifyingActivity extends AppCompatActivity{
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import static android.content.Context.SENSOR_SERVICE;
+import static android.os.Looper.getMainLooper;
+
+
+public class ObjectRecognitionFragment extends Fragment {
+    private static final String ARG_PARAM1 = "param1";
+    private static final String ARG_PARAM2 = "param2";
 
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceViewHolder;
@@ -75,8 +92,6 @@ public class MagnifyingActivity extends AppCompatActivity{
     float maxZoomLevel;
     public Rect zoom;
 
-    ImageButton zoomIn, zoomOut;
-
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
         ORIENTATIONS.append(ExifInterface.ORIENTATION_NORMAL, 0);
@@ -86,23 +101,26 @@ public class MagnifyingActivity extends AppCompatActivity{
     }
 
 
+    public static ObjectRecognitionFragment newInstance(String param1, String param2) {
+        ObjectRecognitionFragment fragment = new ObjectRecognitionFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_PARAM1, param1);
+        args.putString(ARG_PARAM2, param2);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 상태바를 안보이도록 합니다.
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    }
 
-        // 화면 켜진 상태를 유지합니다.
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_object_recognition, container, false);
 
-        setContentView(R.layout.activity_magnifying);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("돋보기");
-
-        ImageButton button = findViewById(R.id.take_photo);
+        ImageButton button = view.findViewById(R.id.take_photo);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,55 +128,19 @@ public class MagnifyingActivity extends AppCompatActivity{
             }
         });
 
-        mSurfaceView = findViewById(R.id.surfaceView);
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mSurfaceView = view.findViewById(R.id.surfaceView);
+        mSensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         deviceOrientation = new DeviceOrientation();
 
         initSurfaceView();
 
-        zoomIn = findViewById(R.id.zoomInButton);
-        zoomIn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(zoomLv<=maxZoomLevel) {
-                    zoomLv = zoomLv+0.5f;
-                    try {
-                        mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
-                        mSession.setRepeatingRequest(mPreviewBuilder.build(), mSessionCaptureCallback, mHandler);
-                        Log.i("currentZoomLevel", zoomLv + "");
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    Toast.makeText(getApplicationContext(), "줌 레벨이 최대입니다.", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-        zoomOut = findViewById(R.id.zoomOutButton);
-        zoomOut.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(zoomLv>1) {
-                    zoomLv = zoomLv-0.5f;
-                    try {
-                        mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
-                        mSession.setRepeatingRequest(mPreviewBuilder.build(), mSessionCaptureCallback, mHandler);
-                        Log.i("currentZoomLevel", zoomLv + "");
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    Toast.makeText(getApplicationContext(), "줌 레벨이 최소입니다.", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        return view;
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
 
         mSensorManager.registerListener(deviceOrientation.getEventListener(), mAccelerometer, SensorManager.SENSOR_DELAY_UI);
@@ -166,7 +148,7 @@ public class MagnifyingActivity extends AppCompatActivity{
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
 
         mSensorManager.unregisterListener(deviceOrientation.getEventListener());
@@ -175,7 +157,7 @@ public class MagnifyingActivity extends AppCompatActivity{
     public void initSurfaceView() {
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         mDSI_height = displayMetrics.heightPixels;
         mDSI_width = displayMetrics.widthPixels;
 
@@ -212,7 +194,7 @@ public class MagnifyingActivity extends AppCompatActivity{
         try {
             String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
 
-            CameraManager mCameraManager = (CameraManager) this.getSystemService(Context.CAMERA_SERVICE);
+            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
             CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
@@ -228,13 +210,13 @@ public class MagnifyingActivity extends AppCompatActivity{
             mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
             mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
 
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
             mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
 
         } catch (CameraAccessException e) {
-            Toast.makeText(this, "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -274,7 +256,7 @@ public class MagnifyingActivity extends AppCompatActivity{
 
         @Override
         public void onError(CameraDevice camera, int error) {
-            Toast.makeText(MagnifyingActivity.this, "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -302,7 +284,7 @@ public class MagnifyingActivity extends AppCompatActivity{
 
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            Toast.makeText(MagnifyingActivity.this, "카메라 구성 실패", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "카메라 구성 실패", Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -323,8 +305,6 @@ public class MagnifyingActivity extends AppCompatActivity{
             super.onCaptureFailed(session, request, failure);
         }
     };
-
-
 
     public void takePicture() {
 
@@ -358,8 +338,6 @@ public class MagnifyingActivity extends AppCompatActivity{
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
-
-
     /**
      * Unlock the focus. This method should be called when still image capture sequence is
      * finished.
@@ -382,14 +360,7 @@ public class MagnifyingActivity extends AppCompatActivity{
     }
 
 
-    //출처 - https://codeday.me/ko/qa/20190310/39556.html
-    /**
-     * A copy of the Android internals  insertImage method, this method populates the
-     * meta data with DATE_ADDED and DATE_TAKEN. This fixes a common problem where media
-     * that is inserted manually gets saved at the end of the gallery (because date is not populated).
-     * @see android.provider.MediaStore.Images.Media#insertImage(ContentResolver, Bitmap, String, String)
-     */
-    public static final String insertImage(ContentResolver cr,Bitmap source,String title,String description) {
+    public static final String insertImage(ContentResolver cr, Bitmap source, String title, String description) {
 
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, title);
@@ -439,7 +410,7 @@ public class MagnifyingActivity extends AppCompatActivity{
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
 
-            Toast.makeText(MagnifyingActivity.this, "사진을 저장하였습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "사진을 저장하였습니다.", Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -451,14 +422,29 @@ public class MagnifyingActivity extends AppCompatActivity{
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            insertImage(getContentResolver(), bitmap, ""+System.currentTimeMillis(), "");
+            insertImage(getActivity().getContentResolver(), bitmap, ""+System.currentTimeMillis(), "");
 
+            String postUrl= "http://54.180.91.200:5000/";
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            try{
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                Log.d("----:MagnifyingActivity", "사진사진사진");
+            }catch (Exception e){
+                Log.d("----:MagnifyingActivity", "요청요청"+e.getMessage());
+            }
+            byte[] byteArray = stream.toByteArray();
+
+            RequestBody postBodyImage = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("image", "androidFlask.jpg", RequestBody.create(MediaType.parse("image/*jpg"), byteArray))
+                    .build();
+
+            postRequest(postUrl, postBodyImage);
             return null;
         }
 
     }
 
-    // 출처 https://stackoverflow.com/a/43516672
     private void setAspectRatioTextureView(int ResolutionWidth , int ResolutionHeight )
     {
         if(ResolutionWidth > ResolutionHeight){
@@ -478,4 +464,65 @@ public class MagnifyingActivity extends AppCompatActivity{
         Log.d("@@@", "TextureView Width : " + viewWidth + " TextureView Height : " + viewHeight);
         mSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(viewWidth, viewHeight));
     }
+    void postRequest(String postUrl, RequestBody postBody) {
+
+        OkHttpClient client = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url(postUrl)
+                .post(postBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // Cancel the post on failure.
+                Log.d("----:MagnifyingActivity", "콜백오류:"+e.getMessage());
+                call.cancel();
+
+                // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, final Response response) throws IOException {
+                // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String text = response.body().string();
+                            Log.d("----:return", "return: "+text);
+                        }catch (IOException e){
+                            e.getMessage();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    public String getPath(Uri uri) {
+        Cursor cursor = null;
+        String result;
+//        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+        try {
+            cursor = getActivity().getContentResolver().query(uri, null, null, null,
+                    null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int column_index = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+                result = cursor.getString(column_index);
+                return cursor.getString(column_index);
+            }
+        } finally {
+            if (cursor != null)
+                cursor.close();
+        }
+        return null;
+    }
+
 }

@@ -23,39 +23,45 @@
 
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/navigation"
             android:layout_width="172dp"
-            android:layout_height="180dp"
-            android:text="Button" />
+            android:layout_height="150dp"
+            android:text="길 찾기" />
 
         <Button
-            android:id="@+id/button3"
+            android:id="@+id/objectRecog"
             android:layout_width="172dp"
-            android:layout_height="180dp"
-            android:text="Button" />
+            android:layout_height="150dp"
+            android:text="사물인식" />
 
         <Button
-            android:id="@+id/button4"
+            android:id="@+id/textRecog"
             android:layout_width="172dp"
-            android:layout_height="180dp"
-            android:text="Button" />
+            android:layout_height="150dp"
+            android:text="문자인식" />
 
         <Button
-            android:id="@+id/button5"
+            android:id="@+id/colorRecog"
             android:layout_width="172dp"
-            android:layout_height="180dp"
-            android:text="Button" />
+            android:layout_height="150dp"
+            android:text="색상 인식" />
 
         <Button
-            android:id="@+id/button7"
+            android:id="@+id/brightness"
             android:layout_width="172dp"
-            android:layout_height="180dp"
-            android:text="Button" />
+            android:layout_height="150dp"
+            android:text="빛 밝기" />
 
         <Button
-            android:id="@+id/func_exit"
+            android:id="@+id/gallery"
             android:layout_width="172dp"
-            android:layout_height="180dp"
-            android:text="Button" />
+            android:layout_height="150dp"
+            android:text="사진첩" />
+
+        <Button
+            android:id="@+id/setting"
+            android:layout_width="172dp"
+            android:layout_height="150dp"
+            android:text="설정" />
     </androidx.gridlayout.widget.GridLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

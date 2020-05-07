@@ -38,33 +38,6 @@ public class RightFragment extends Fragment{
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_right, container, false);
-        textbtn = view.findViewById(R.id.textBtn);
-        textbtn.setOnClickListener(new Button.OnClickListener(){
-            @Override
-            public void onClick(View view){
-                Intent intent = new Intent(getActivity(), TextRecognition.class);
-                startActivity(intent);
-            }
-        });
-
-        magbtn = view.findViewById(R.id.magnifyingBtn);
-        magbtn.setOnClickListener(new Button.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(getActivity(), MagnifyingActivity.class);
-                startActivity(i);
-            }
-        });
-
-        helpbtn = view.findViewById(R.id.helpBtn);
-        helpbtn.setOnClickListener(new Button.OnClickListener(){
-            @Override
-            public void onClick(View view){
-                Intent intent = new Intent(getActivity(), helpsActivity.class);
-                startActivity(intent);
-            }
-        });
-
         return view;
     }
 }

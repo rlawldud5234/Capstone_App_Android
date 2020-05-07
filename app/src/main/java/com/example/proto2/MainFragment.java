@@ -34,6 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -81,7 +82,8 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     private TMapMarkerItem tItem;
     private TMapCircle tCircle;
 
-    private Button searchBtn, buttonSearch;
+    private Button buttonSearch;
+    private ImageButton searchBtn;
     private TextView speechTextView;
     private EditText searchBar;
 
@@ -448,13 +450,13 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         @Override
         public void onReadyForSpeech(Bundle params) {
             //사용자가 말하기 시작할 준비가 되면 호출된다
-            searchBtn.setTextColor(Color.YELLOW);
+            speechTextView.setTextColor(Color.YELLOW);
         }
 
         @Override
         public void onBeginningOfSpeech() {
             //사용자가 말하기 시작했을 때 호출된다
-            searchBtn.setTextColor(Color.RED);
+            speechTextView.setTextColor(Color.RED);
         }
 
         @Override
@@ -470,7 +472,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         @Override
         public void onEndOfSpeech() {
             //사용자가 말하기를 중지하면 호출된다
-            searchBtn.setTextColor(Color.WHITE);
+            speechTextView.setTextColor(Color.WHITE);
         }
 
         @Override
