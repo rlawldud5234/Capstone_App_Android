@@ -60,11 +60,11 @@ public class MainActivity extends AppCompatActivity {
                 case 0:
                     return LeftFragment.newInstance("0", "Page");   //메뉴
                 case 1:
-                    return ObjectRecognitionFragment.newInstance("2", "page");  //사물인식
+                    return ObjectRecognitionFragment.newInstance("1", "page");  //사물인식
                 case 2:
-                    return MainFragment.newInstance("1", String.valueOf(checkFirst));   //길찾기
+                    return MainFragment.newInstance("2", String.valueOf(checkFirst));   //길찾기
                 case 3:
-                    return RightFragment.newInstance("3", "Page");  //메뉴였던 것
+                    return ColorRecognitionFragment.newInstance("3", "page");   //색상인식
                 default:
                     return null;
             }
