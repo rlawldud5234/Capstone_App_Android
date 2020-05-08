@@ -421,8 +421,7 @@ public class ColorRecognitionFragment extends Fragment implements View.OnClickLi
         } catch (CameraAccessException e) {
             e.printStackTrace();
         } catch (NullPointerException e) {
-            // Currently an NPE is thrown when the Camera2API is used but not supported on the
-            // device this code runs.
+            e.printStackTrace();
         }
     }
 
@@ -448,9 +447,6 @@ public class ColorRecognitionFragment extends Fragment implements View.OnClickLi
         }
     }
 
-    /**
-     * Closes the current {@link CameraDevice}.
-     */
     private void closeCamera() {
         try {
             mCameraOpenCloseLock.acquire();
@@ -473,18 +469,12 @@ public class ColorRecognitionFragment extends Fragment implements View.OnClickLi
         }
     }
 
-    /**
-     * Starts a background thread and its {@link Handler}.
-     */
     private void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("CameraBackground");
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
 
-    /**
-     * Stops the background thread and its {@link Handler}.
-     */
     private void stopBackgroundThread() {
         mBackgroundThread.quitSafely();
         try {
@@ -771,7 +761,7 @@ public class ColorRecognitionFragment extends Fragment implements View.OnClickLi
                     float current_finger_spacing;
 
                     if (event.getPointerCount() > 1) {
-                        // Multi touch logic
+
                         current_finger_spacing = getFingerSpacing(event);
                         if(fingerSpacing != 0){
                             if(current_finger_spacing > fingerSpacing && maxzoom > zoomLevel){
@@ -798,8 +788,7 @@ public class ColorRecognitionFragment extends Fragment implements View.OnClickLi
                     }
 
                     try {
-                        mCaptureSession
-                                .setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+                        mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     } catch (NullPointerException ex) {
@@ -811,58 +800,13 @@ public class ColorRecognitionFragment extends Fragment implements View.OnClickLi
                 return true;
             }
         });
+
         return view;
     }
-
-    public boolean onTouchEvent(MotionEvent event) {
-        try {
-            Rect rect = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-            if (rect == null) return false;
-            float currentFingerSpacing;
-
-            if (event.getPointerCount() == 2) { //Multi touch.
-                currentFingerSpacing = getFingerSpacing(event);
-                float delta = 0.05f; //Control this value to control the zooming sensibility
-                if (fingerSpacing != 0) {
-                    if (currentFingerSpacing > fingerSpacing) { //Don't over zoom-in
-                        if ((maximumZoomLevel - zoomLevel) <= delta) {
-                            delta = maximumZoomLevel - zoomLevel;
-                        }
-                        zoomLevel = zoomLevel + delta;
-                    } else if (currentFingerSpacing < fingerSpacing){ //Don't over zoom-out
-                        if ((zoomLevel - delta) < 1f) {
-                            delta = zoomLevel - 1f;
-                        }
-                        zoomLevel = zoomLevel - delta;
-                    }
-                    float ratio = (float) 1 / zoomLevel; //This ratio is the ratio of cropped Rect to Camera's original(Maximum) Rect
-                    //croppedWidth and croppedHeight are the pixels cropped away, not pixels after cropped
-                    int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
-                    int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
-                    //Finally, zoom represents the zoomed visible area
-                    zoom = new Rect(croppedWidth/2, croppedHeight/2,
-                            rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
-                    previewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
-                }
-                fingerSpacing = currentFingerSpacing;
-            } else { //Single touch point, needs to return true in order to detect one more touch point
-                return true;
-            }
-            captureSession.setRepeatingRequest(previewRequestBuilder.build(), mCaptureCallback, null);
-            return true;
-        } catch (final Exception e) {
-            //Error handling up to you
-            return true;
-        }
-    }
-
-
 
     private float getFingerSpacing(MotionEvent event) {
         float x = event.getX(0) - event.getX(1);
         float y = event.getY(0) - event.getY(1);
         return (float) Math.sqrt(x * x + y * y);
     }
-
-
 }

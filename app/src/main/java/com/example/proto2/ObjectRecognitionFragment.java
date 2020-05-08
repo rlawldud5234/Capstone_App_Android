@@ -1,5 +1,6 @@
 package com.example.proto2;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -37,11 +38,13 @@ import androidx.fragment.app.Fragment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
+import android.renderscript.Sampler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -68,6 +71,7 @@ import okhttp3.Response;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Looper.getMainLooper;
+import static androidx.constraintlayout.widget.Constraints.TAG;
 
 
 public class ObjectRecognitionFragment extends Fragment {
@@ -89,9 +93,18 @@ public class ObjectRecognitionFragment extends Fragment {
     private DeviceOrientation deviceOrientation;
     int mDSI_height, mDSI_width;
 
-    float zoomLv = 1f;
-    float maxZoomLevel;
-    public Rect zoom;
+    private static final int STATE_PREVIEW = 0;
+    private static final int STATE_WAITING_LOCK = 1;
+    private static final int STATE_WAITING_PRECAPTURE = 2;
+    private static final int STATE_WAITING_NON_PRECAPTURE = 3;
+    private static final int STATE_PICTURE_TAKEN = 4;
+
+    SeekBar zoomSeekBar;
+    protected float zoomLevel = 1f;
+    protected float maximumZoomLevel;
+    protected Rect zoom;
+    private String mCameraId;
+    private int mState = STATE_PREVIEW;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
@@ -109,6 +122,106 @@ public class ObjectRecognitionFragment extends Fragment {
         args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    private CameraCaptureSession.CaptureCallback mCaptureCallback
+            = new CameraCaptureSession.CaptureCallback() {
+
+        private void process(CaptureResult result) {
+            switch (mState) {
+                case STATE_PREVIEW: {
+                    // We have nothing to do when the camera preview is working normally.
+                    break;
+                }
+                case STATE_WAITING_LOCK: {
+                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                    if (afState == null) {
+                        captureStillPicture();
+                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                        // CONTROL_AE_STATE can be null on some devices
+                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                        if (aeState == null ||
+                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                            mState = STATE_PICTURE_TAKEN;
+                            captureStillPicture();
+                        } else {
+                            runPrecaptureSequence();
+                        }
+                    }
+                    break;
+                }
+                case STATE_WAITING_PRECAPTURE: {
+                    // CONTROL_AE_STATE can be null on some devices
+                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == null ||
+                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                        mState = STATE_WAITING_NON_PRECAPTURE;
+                    }
+                    break;
+                }
+                case STATE_WAITING_NON_PRECAPTURE: {
+                    // CONTROL_AE_STATE can be null on some devices
+                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                        mState = STATE_PICTURE_TAKEN;
+                        captureStillPicture();
+                    }
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public void onCaptureProgressed(@NonNull CameraCaptureSession session,
+                                        @NonNull CaptureRequest request,
+                                        @NonNull CaptureResult partialResult) {
+            process(partialResult);
+        }
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                       @NonNull CaptureRequest request,
+                                       @NonNull TotalCaptureResult result) {
+            process(result);
+        }
+
+    };
+
+    public void initCameraAndPreview() {
+        HandlerThread handlerThread = new HandlerThread("CAMERA2");
+        handlerThread.start();
+        mHandler = new Handler(handlerThread.getLooper());
+        Handler mainHandler = new Handler(getMainLooper());
+        try {
+            String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
+            this.mCameraId = mCameraId;
+
+            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+            maximumZoomLevel = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
+            Log.i("maxZoomLevel", maximumZoomLevel+"");
+
+
+            Size largestPreviewSize = map.getOutputSizes(ImageFormat.JPEG)[0];
+            Log.i("LargestSize", largestPreviewSize.getWidth() + " " + largestPreviewSize.getHeight());
+
+            setAspectRatioTextureView(largestPreviewSize.getHeight(),largestPreviewSize.getWidth());
+
+            mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
+            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
+
+            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
+
+        } catch (CameraAccessException e) {
+            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -134,6 +247,59 @@ public class ObjectRecognitionFragment extends Fragment {
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         deviceOrientation = new DeviceOrientation();
+
+        zoomSeekBar = (SeekBar)view.findViewById(R.id.zoomSeekBar);
+        zoomSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                Log.d(TAG, "progress:"+progress);
+
+                try{
+                    Activity activity = getActivity();
+                    CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+                    CameraCharacteristics characteristics = manager.getCameraCharacteristics(mCameraId);
+                    float maxzoom = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM))*10;
+
+                    Rect m = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                    zoomSeekBar.setMax((int)maxzoom);
+
+                    if (progress >= 1) {
+                        zoomLevel = progress;
+                        int minW = (int) (m.width() / maxzoom);
+                        int minH = (int) (m.height() / maxzoom);
+                        int difW = m.width() - minW;
+                        int difH = m.height() - minH;
+                        int cropW = difW /100 *(int)zoomLevel;
+                        int cropH = difH /100 *(int)zoomLevel;
+                        cropW -= cropW & 3;
+                        cropH -= cropH & 3;
+                        Rect zoom = new Rect(cropW, cropH, m.width() - cropW, m.height() - cropH);
+                        mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+                    }
+
+                    try {
+                        mSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, null);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    } catch (NullPointerException ex) {
+                        ex.printStackTrace();
+                    }
+                }catch(CameraAccessException e) {
+                    throw new RuntimeException("can not access camera.", e);
+                }
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
 
         initSurfaceView();
 
@@ -187,40 +353,45 @@ public class ObjectRecognitionFragment extends Fragment {
         });
     }
 
-    public void initCameraAndPreview() {
-        HandlerThread handlerThread = new HandlerThread("CAMERA2");
-        handlerThread.start();
-        mHandler = new Handler(handlerThread.getLooper());
-        Handler mainHandler = new Handler(getMainLooper());
+    private void captureStillPicture() {
         try {
-            String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
-
-            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-
-            maxZoomLevel = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
-            Log.i("maxZoomLevel", maxZoomLevel+"");
-
-
-            Size largestPreviewSize = map.getOutputSizes(ImageFormat.JPEG)[0];
-            Log.i("LargestSize", largestPreviewSize.getWidth() + " " + largestPreviewSize.getHeight());
-
-            setAspectRatioTextureView(largestPreviewSize.getHeight(),largestPreviewSize.getWidth());
-
-            mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
-            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
-
-            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            final Activity activity = getActivity();
+            if (null == activity || null == mCameraDevice) {
                 return;
             }
-            mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
+            // This is the CaptureRequest.Builder that we use to take a picture.
+            final CaptureRequest.Builder captureBuilder =
+                    mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(mImageReader.getSurface());
 
+            // Use the same AE and AF modes as the preview.
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+
+            // Orientation
+//            int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+//            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
+
+
+            if (zoom != null) {
+                captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+            }
+
+            CameraCaptureSession.CaptureCallback CaptureCallback
+                    = new CameraCaptureSession.CaptureCallback() {
+
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session,@NonNull CaptureRequest request,@NonNull TotalCaptureResult result) {
+                    unlockFocus();
+                }
+            };
+
+            mSession.stopRepeating();
+            mSession.abortCaptures();
+            mSession.capture(captureBuilder.build(), CaptureCallback, null);
         } catch (CameraAccessException e) {
-            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
         }
     }
-
 
     private ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
@@ -235,6 +406,19 @@ public class ObjectRecognitionFragment extends Fragment {
         }
     };
 
+    private void runPrecaptureSequence() {
+        try {
+            // This is how to tell the camera to trigger.
+            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+            // Tell #mCaptureCallback to wait for the precapture sequence to be set.
+            mState = STATE_WAITING_PRECAPTURE;
+            mSession.capture(mPreviewBuilder.build(), mCaptureCallback,
+                    mHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
 
     private CameraDevice.StateCallback deviceStateCallback = new CameraDevice.StateCallback() {
         @Override
@@ -260,7 +444,6 @@ public class ObjectRecognitionFragment extends Fragment {
             Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
         }
     };
-
 
     public void takePreview() throws CameraAccessException {
         mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
