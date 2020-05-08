@@ -71,7 +71,7 @@ public class prevActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(prevActivity.this, MainActivity.class);
-                i.putExtra("button", "recog");
+                i.putExtra("button", "object");
                 i.putExtra("FirstCheck", isFirst);
                 startActivity(i);
             }

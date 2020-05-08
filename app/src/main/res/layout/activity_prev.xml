@@ -19,13 +19,17 @@
             android:layout_width="match_parent"
             android:layout_height="250dp"
             android:text="길찾기"
-            android:textSize="45dp" />
+            android:textSize="55dp"
+            android:textColor="@color/textcolor"
+            android:background="#00ff0000"/>
 
         <Button
             android:id="@+id/recog_button"
             android:layout_width="match_parent"
             android:layout_height="250dp"
-            android:textSize="45dp"
+            android:textSize="55dp"
+            android:textColor="@color/textcolor"
+            android:background="#00ff0000"
             android:text="인식하기" />
 
     </LinearLayout>

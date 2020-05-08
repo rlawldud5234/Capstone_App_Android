@@ -279,7 +279,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
                 tmapView.setLocationPoint(longitude, latitude);
-                tmapView.setCenterPoint(longitude, latitude,true);
+                tmapView.setCenterPoint(longitude, latitude);
                 currentpoint = new TMapPoint(latitude, longitude);
             }
         }
@@ -318,36 +318,6 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
             poiNameArr.clear();
         }
 
-//        명칭검색
-//        tData.findAroundNamePOI(currentpoint, dest, 1, 10, new TMapData.FindAroundNamePOIListenerCallback() {
-//            @Override
-//            public void onFindAroundNamePOI(ArrayList<TMapPOIItem> poiItem) {   //지도 위치 또는 현재 위치 기준으로 검색
-//                try {
-//                    for (int i = 0; i < poiItem.size(); i++) {
-//                        TMapPOIItem item = poiItem.get(i);
-//                        String str_addr = item.getPOIAddress();
-//                        String str_name = item.getPOIName();
-//                        TMapPoint poi_point = item.getPOIPoint();
-//                        data = new Dictionary(str_name, poi_point);
-//                        poiNameArr.add(data);
-//
-//                        Log.d("----debug----", "\n이름: " + str_name + "\n주소: " + str_addr + "\n좌표: " + poi_point.toString());
-//                    }
-//                    new Thread() {
-//                        public void run() {
-//                            Message msg = handler.obtainMessage();
-//                            handler.sendMessage(msg);
-//                        }
-//                    }.start();
-//
-//                } catch (NullPointerException e){
-//                    speechTextView.setText("다시 검색해주세요.");
-//                }
-//            }
-//        });
-
-
-//        주소검색(단점: 서울기준)
         tData.findAddressPOI(dest, new TMapData.FindAddressPOIListenerCallback() {
             @Override
             public void onFindAddressPOI(ArrayList<TMapPOIItem> arrayList) {
@@ -450,7 +420,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         @Override
         public void onReadyForSpeech(Bundle params) {
             //사용자가 말하기 시작할 준비가 되면 호출된다
-            speechTextView.setTextColor(Color.YELLOW);
+            speechTextView.setTextColor(Color.BLUE);
         }
 
         @Override
@@ -472,7 +442,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         @Override
         public void onEndOfSpeech() {
             //사용자가 말하기를 중지하면 호출된다
-            speechTextView.setTextColor(Color.WHITE);
+            speechTextView.setTextColor(Color.BLACK);
         }
 
         @Override

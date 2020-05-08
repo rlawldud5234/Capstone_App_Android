@@ -29,12 +29,5 @@ public class helpsActivity extends AppCompatActivity {
         os = findViewById(R.id.opensource);
         ai = findViewById(R.id.appInfo);
         htu = findViewById(R.id.howToUse);
-        htu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(helpsActivity.this, HTUActivity.class);
-                startActivity(i);
-            }
-        });
     }
 }

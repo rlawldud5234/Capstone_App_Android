@@ -16,7 +16,7 @@ public class LeftFragment extends Fragment {
     private static final String ARG_PARAM2 = "param2";
 
     FragmentManager fManager;
-    Button navBtn, objectRecogBtn, colorRecogBtn, brightnessBtn, galleryBtn, settingBtn;
+    Button navBtn, objectRecogBtn, textRecog, colorRecogBtn, brightnessBtn, galleryBtn, settingBtn;
 
     public static LeftFragment newInstance(String param1, String param2) {
         LeftFragment fragment = new LeftFragment();
@@ -50,7 +50,35 @@ public class LeftFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(getActivity(), MainActivity.class);
-                i.putExtra("button","recog");
+                i.putExtra("button","object");
+                startActivity(i);
+            }
+        });
+
+        colorRecogBtn = view.findViewById(R.id.colorRecog);
+        colorRecogBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), MainActivity.class);
+                i.putExtra("button","color");
+                startActivity(i);
+            }
+        });
+
+        textRecog = view.findViewById(R.id.textRecog);
+        textRecog.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), TextRecognition.class);
+                startActivity(i);
+            }
+        });
+
+        settingBtn = view.findViewById(R.id.setting);
+        settingBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), SettingActivity.class);
                 startActivity(i);
             }
         });

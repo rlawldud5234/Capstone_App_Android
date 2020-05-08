@@ -18,8 +18,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.speech.tts.TextToSpeech;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,11 +43,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Locale;
 
 
 public class TextRecognition extends AppCompatActivity {
 
-    EditText mResultEt;
+    TextView mResultEt;
     ImageView mPreviewIv;
     TessBaseAPI tess;
     String dataPath = "";
@@ -59,14 +63,14 @@ public class TextRecognition extends AppCompatActivity {
     String storagePermission[];
 
     Uri image_uri;
-
+    TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_recognition);
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setSubtitle("click+image");
+        actionBar.setTitle("문자인식");
 
         mResultEt = findViewById(R.id.resultEt);
         mPreviewIv = findViewById(R.id.imageIv);
@@ -86,9 +90,26 @@ public class TextRecognition extends AppCompatActivity {
         tess = new TessBaseAPI();
         tess.init(dataPath, lang);
 
-        //이미지 미리 설정
-        processImage(BitmapFactory.decodeResource(getResources(), R.drawable.shot));
+        //TTS 설정
+        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                tts.setLanguage(Locale.KOREA);
+            }
+        });
 
+    }
+
+    //TTS 말하기
+    public void speakTTS(String sentence) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            String utteranceId=this.hashCode() + "";
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+        } else {
+            HashMap<String, String> hashmap = new HashMap<>();
+            hashmap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, hashmap);
+        }
     }
 
     //문자 인식 및 결과
@@ -100,6 +121,7 @@ public class TextRecognition extends AppCompatActivity {
         TextView OCRTextView = findViewById(R.id.resultEt);
 
         OCRTextView.setText(OCRresult);
+        speakTTS(OCRresult);
     }
 
     private void copyFiles(String lang){

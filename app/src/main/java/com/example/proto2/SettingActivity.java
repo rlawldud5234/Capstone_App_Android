@@ -5,13 +5,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
-public class HTUActivity extends AppCompatActivity {
+public class SettingActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_htu);
+        setContentView(R.layout.activity_setting);
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("사용법 안내");
+        actionBar.setTitle("설정");
     }
 }

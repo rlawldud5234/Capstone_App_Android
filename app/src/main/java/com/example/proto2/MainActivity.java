@@ -29,12 +29,16 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         checkFirst = intent.getExtras().getBoolean("FirstCheck");
 
-        if(intent.getExtras().getString("button").equals("recog")){
+        if(intent.getExtras().getString("button").equals("object")){
             vpPager.setCurrentItem(1);
         }
 
-        if(intent.getExtras().getString("button").equals("nav")){
+        if(intent.getExtras().getString("button").equals("color")){
             vpPager.setCurrentItem(2);
+        }
+
+        if(intent.getExtras().getString("button").equals("nav")){
+            vpPager.setCurrentItem(3);
         }
     }
 
@@ -55,16 +59,16 @@ public class MainActivity extends AppCompatActivity {
 
         // Returns the fragment to display for that page
         @Override
-        public Fragment getItem(int position) {
+        public Fragment getItem(int position) {     //메뉴 - 사물인식 - 문자인식 - 색상인식 - 빛 밝기 - 길 찾기
             switch (position) {
                 case 0:
                     return LeftFragment.newInstance("0", "Page");   //메뉴
                 case 1:
                     return ObjectRecognitionFragment.newInstance("1", "page");  //사물인식
                 case 2:
-                    return MainFragment.newInstance("2", String.valueOf(checkFirst));   //길찾기
+                    return ColorRecognitionFragment.newInstance("2", "page");   //색상인식
                 case 3:
-                    return ColorRecognitionFragment.newInstance("3", "page");   //색상인식
+                    return MainFragment.newInstance("3", String.valueOf(checkFirst));   //길찾기
                 default:
                     return null;
             }

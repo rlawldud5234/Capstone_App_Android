@@ -29,6 +29,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -38,13 +39,12 @@ import androidx.fragment.app.Fragment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
-import android.renderscript.Sampler;
+import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -59,6 +59,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -105,6 +107,8 @@ public class ObjectRecognitionFragment extends Fragment {
     protected Rect zoom;
     private String mCameraId;
     private int mState = STATE_PREVIEW;
+
+    TextToSpeech tts;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
@@ -227,14 +231,20 @@ public class ObjectRecognitionFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        //TTS 설정
+        tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                tts.setLanguage(Locale.KOREA);
+            }
+        });
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_object_recognition, container, false);
 
-        ImageButton button = view.findViewById(R.id.take_photo);
+        ImageButton button = view.findViewById(R.id.obj_take_photo);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -242,13 +252,13 @@ public class ObjectRecognitionFragment extends Fragment {
             }
         });
 
-        mSurfaceView = view.findViewById(R.id.surfaceView);
+        mSurfaceView = view.findViewById(R.id.obj_surfaceView);
         mSensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         deviceOrientation = new DeviceOrientation();
 
-        zoomSeekBar = (SeekBar)view.findViewById(R.id.zoomSeekBar);
+        zoomSeekBar = (SeekBar)view.findViewById(R.id.obj_zoomSeekBar);
         zoomSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -319,6 +329,31 @@ public class ObjectRecognitionFragment extends Fragment {
         super.onPause();
 
         mSensorManager.unregisterListener(deviceOrientation.getEventListener());
+
+        if (null != mSession) {
+            mSession.close();
+            mSession = null;
+        }
+        if (null != mCameraDevice) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+        if (null != mImageReader) {
+            mImageReader.close();
+            mImageReader = null;
+        }
+    }
+
+    //TTS 말하기
+    public void speakTTS(String sentence) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            String utteranceId=this.hashCode() + "";
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+        } else {
+            HashMap<String, String> hashmap = new HashMap<>();
+            hashmap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, hashmap);
+        }
     }
 
     public void initSurfaceView() {
@@ -597,6 +632,7 @@ public class ObjectRecognitionFragment extends Fragment {
             Toast.makeText(getContext(), "사진을 저장하였습니다.", Toast.LENGTH_SHORT).show();
         }
 
+        // 사물인식
         @Override
         protected Void doInBackground(Bitmap... data) {
 
@@ -615,6 +651,7 @@ public class ObjectRecognitionFragment extends Fragment {
                 Log.d("----:MagnifyingActivity", "사진사진사진");
             }catch (Exception e){
                 Log.d("----:MagnifyingActivity", "요청요청"+e.getMessage());
+                speakTTS(""+e.getMessage());
             }
             byte[] byteArray = stream.toByteArray();
 
@@ -663,6 +700,7 @@ public class ObjectRecognitionFragment extends Fragment {
                 // Cancel the post on failure.
                 Log.d("----:MagnifyingActivity", "콜백오류:"+e.getMessage());
                 call.cancel();
+                speakTTS("콜백오류");
 
                 // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
                 getActivity().runOnUiThread(new Runnable() {
@@ -672,6 +710,7 @@ public class ObjectRecognitionFragment extends Fragment {
                 });
             }
 
+            // 사물인식 결과
             @Override
             public void onResponse(Call call, final Response response) throws IOException {
                 // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
@@ -681,6 +720,7 @@ public class ObjectRecognitionFragment extends Fragment {
                         try {
                             String text = response.body().string();
                             Log.d("----:return", "return: "+text);
+                            speakTTS(text);
                         }catch (IOException e){
                             e.getMessage();
                         }

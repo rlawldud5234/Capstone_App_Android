@@ -7,10 +7,10 @@
     tools:context=".ColorRecognitionFragment">
 
 
-    <TextureView
-        android:id="@+id/texture"
-        android:layout_width="wrap_content"
-        android:layout_height="530dp" />
+    <SurfaceView
+        android:id="@+id/col_surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,7 +19,7 @@
         android:layout_gravity="center_horizontal|bottom">
 
         <SeekBar
-            android:id="@+id/zoomSeekBar"
+            android:id="@+id/col_zoomSeekBar"
             android:layout_width="match_parent"
             android:layout_height="30dp"
             android:layout_marginStart="16dp"
@@ -28,7 +28,7 @@
             android:max="4" />
 
         <ImageButton
-            android:id="@+id/picture"
+            android:id="@+id/col_take_photo"
             android:layout_width="70dp"
             android:layout_height="70dp"
             android:background="#00ff0000"
