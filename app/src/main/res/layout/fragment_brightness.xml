@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".BrightnessFragment">
+
+    <SurfaceView
+        android:id="@+id/svLight"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+    <TextView
+        android:id="@+id/tvLight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/cardview_light_background"
+        android:background="@color/common_google_signin_btn_text_dark_focused"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="30dp"
+        android:textSize="25dp"
+        android:text="밝기: 0"/>
+
+</FrameLayout>

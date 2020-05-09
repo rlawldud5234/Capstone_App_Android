@@ -69,10 +69,24 @@ public class LeftFragment extends Fragment {
         textRecog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(getActivity(), TextRecognition.class);
+                Intent i = new Intent(getActivity(), MainActivity.class);
+                i.putExtra("button","text");
                 startActivity(i);
             }
         });
+
+        brightnessBtn = view.findViewById(R.id.brightness);
+        brightnessBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getActivity(), MainActivity.class);
+                i.putExtra("button","light");
+                startActivity(i);
+            }
+        });
+
+
+        galleryBtn = view.findViewById(R.id.gallery);
 
         settingBtn = view.findViewById(R.id.setting);
         settingBtn.setOnClickListener(new View.OnClickListener() {

@@ -1,5 +1,6 @@
 package com.example.proto2;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -34,6 +35,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
@@ -61,6 +63,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -126,106 +129,6 @@ public class ObjectRecognitionFragment extends Fragment {
         args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
-    }
-
-    private CameraCaptureSession.CaptureCallback mCaptureCallback
-            = new CameraCaptureSession.CaptureCallback() {
-
-        private void process(CaptureResult result) {
-            switch (mState) {
-                case STATE_PREVIEW: {
-                    // We have nothing to do when the camera preview is working normally.
-                    break;
-                }
-                case STATE_WAITING_LOCK: {
-                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
-                        captureStillPicture();
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        // CONTROL_AE_STATE can be null on some devices
-                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null ||
-                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                            mState = STATE_PICTURE_TAKEN;
-                            captureStillPicture();
-                        } else {
-                            runPrecaptureSequence();
-                        }
-                    }
-                    break;
-                }
-                case STATE_WAITING_PRECAPTURE: {
-                    // CONTROL_AE_STATE can be null on some devices
-                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                    if (aeState == null ||
-                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
-                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
-                        mState = STATE_WAITING_NON_PRECAPTURE;
-                    }
-                    break;
-                }
-                case STATE_WAITING_NON_PRECAPTURE: {
-                    // CONTROL_AE_STATE can be null on some devices
-                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
-                        mState = STATE_PICTURE_TAKEN;
-                        captureStillPicture();
-                    }
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public void onCaptureProgressed(@NonNull CameraCaptureSession session,
-                                        @NonNull CaptureRequest request,
-                                        @NonNull CaptureResult partialResult) {
-            process(partialResult);
-        }
-
-        @Override
-        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                                       @NonNull CaptureRequest request,
-                                       @NonNull TotalCaptureResult result) {
-            process(result);
-        }
-
-    };
-
-    public void initCameraAndPreview() {
-        HandlerThread handlerThread = new HandlerThread("CAMERA2");
-        handlerThread.start();
-        mHandler = new Handler(handlerThread.getLooper());
-        Handler mainHandler = new Handler(getMainLooper());
-        try {
-            String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
-            this.mCameraId = mCameraId;
-
-            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-
-            maximumZoomLevel = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
-            Log.i("maxZoomLevel", maximumZoomLevel+"");
-
-
-            Size largestPreviewSize = map.getOutputSizes(ImageFormat.JPEG)[0];
-            Log.i("LargestSize", largestPreviewSize.getWidth() + " " + largestPreviewSize.getHeight());
-
-            setAspectRatioTextureView(largestPreviewSize.getHeight(),largestPreviewSize.getWidth());
-
-            mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
-            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
-
-            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
-
-        } catch (CameraAccessException e) {
-            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override
@@ -316,6 +219,119 @@ public class ObjectRecognitionFragment extends Fragment {
         return view;
     }
 
+
+    //TTS 말하기
+    public void speakTTS(String sentence) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            String utteranceId=this.hashCode() + "";
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+        } else {
+            HashMap<String, String> hashmap = new HashMap<>();
+            hashmap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, hashmap);
+        }
+    }
+
+    private CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+
+        private void process(CaptureResult result) {
+            switch (mState) {
+                case STATE_PREVIEW: {
+                    // We have nothing to do when the camera preview is working normally.
+                    break;
+                }
+                case STATE_WAITING_LOCK: {
+                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                    if (afState == null) {
+                        captureStillPicture();
+                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                        // CONTROL_AE_STATE can be null on some devices
+                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                        if (aeState == null ||
+                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                            mState = STATE_PICTURE_TAKEN;
+                            captureStillPicture();
+                        } else {
+                            runPrecaptureSequence();
+                        }
+                    }
+                    break;
+                }
+                case STATE_WAITING_PRECAPTURE: {
+                    // CONTROL_AE_STATE can be null on some devices
+                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == null ||
+                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                        mState = STATE_WAITING_NON_PRECAPTURE;
+                    }
+                    break;
+                }
+                case STATE_WAITING_NON_PRECAPTURE: {
+                    // CONTROL_AE_STATE can be null on some devices
+                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                        mState = STATE_PICTURE_TAKEN;
+                        captureStillPicture();
+                    }
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public void onCaptureProgressed(@NonNull CameraCaptureSession session,
+                                        @NonNull CaptureRequest request,
+                                        @NonNull CaptureResult partialResult) {
+            process(partialResult);
+        }
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                       @NonNull CaptureRequest request,
+                                       @NonNull TotalCaptureResult result) {
+            process(result);
+        }
+
+    };
+
+
+    public void initCameraAndPreview() {
+        HandlerThread handlerThread = new HandlerThread("CAMERA2");
+        handlerThread.start();
+        mHandler = new Handler(handlerThread.getLooper());
+        Handler mainHandler = new Handler(getMainLooper());
+        try {
+            String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
+            this.mCameraId = mCameraId;
+
+            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+            maximumZoomLevel = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
+            Log.i("maxZoomLevel", maximumZoomLevel+"");
+
+
+            Size largestPreviewSize = map.getOutputSizes(ImageFormat.JPEG)[0];
+            Log.i("LargestSize", largestPreviewSize.getWidth() + " " + largestPreviewSize.getHeight());
+
+            setAspectRatioTextureView(largestPreviewSize.getHeight(),largestPreviewSize.getWidth());
+
+            mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
+            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
+
+            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
+
+        } catch (CameraAccessException e) {
+            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -341,18 +357,6 @@ public class ObjectRecognitionFragment extends Fragment {
         if (null != mImageReader) {
             mImageReader.close();
             mImageReader = null;
-        }
-    }
-
-    //TTS 말하기
-    public void speakTTS(String sentence) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            String utteranceId=this.hashCode() + "";
-            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
-        } else {
-            HashMap<String, String> hashmap = new HashMap<>();
-            hashmap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
-            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, hashmap);
         }
     }
 
@@ -401,11 +405,6 @@ public class ObjectRecognitionFragment extends Fragment {
 
             // Use the same AE and AF modes as the preview.
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-
-            // Orientation
-//            int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-//            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
-
 
             if (zoom != null) {
                 captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
@@ -486,13 +485,13 @@ public class ObjectRecognitionFragment extends Fragment {
         mCameraDevice.createCaptureSession(Arrays.asList(mSurfaceViewHolder.getSurface(), mImageReader.getSurface()), mSessionPreviewStateCallback, mHandler);
     }
 
+    // ddd
     private CameraCaptureSession.StateCallback mSessionPreviewStateCallback = new CameraCaptureSession.StateCallback() {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
             mSession = session;
 
             try {
-
                 mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                 mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 mSession.setRepeatingRequest(mPreviewBuilder.build(), null, mHandler);
@@ -533,8 +532,6 @@ public class ObjectRecognitionFragment extends Fragment {
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
-
-            // 화면 회전 안되게 고정시켜 놓은 상태에서는 아래 로직으로 방향을 얻을 수 없어서 센서를 사용하는 것으로 변경
             //deviceRotation = getResources().getConfiguration().orientation;
             mDeviceRotation = ORIENTATIONS.get(deviceOrientation.getOrientation());
             Log.d("@@@", mDeviceRotation+"");
@@ -557,10 +554,6 @@ public class ObjectRecognitionFragment extends Fragment {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
-    /**
-     * Unlock the focus. This method should be called when still image capture sequence is
-     * finished.
-     */
     private void unlockFocus() {
         try {
             // Reset the auto-focus trigger
@@ -651,7 +644,7 @@ public class ObjectRecognitionFragment extends Fragment {
                 Log.d("----:MagnifyingActivity", "사진사진사진");
             }catch (Exception e){
                 Log.d("----:MagnifyingActivity", "요청요청"+e.getMessage());
-                speakTTS(""+e.getMessage());
+                speakTTS("에러 발생");
             }
             byte[] byteArray = stream.toByteArray();
 
@@ -685,6 +678,7 @@ public class ObjectRecognitionFragment extends Fragment {
         Log.d("@@@", "TextureView Width : " + viewWidth + " TextureView Height : " + viewHeight);
         mSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(viewWidth, viewHeight));
     }
+
     void postRequest(String postUrl, RequestBody postBody) {
 
         OkHttpClient client = new OkHttpClient();

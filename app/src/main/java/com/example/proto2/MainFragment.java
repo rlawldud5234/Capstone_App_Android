@@ -198,7 +198,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
         View view = inflater.inflate(R.layout.fragment_main, container, false);
         setGps();
 
-        //TTS 설정
+//        TTS 설정
         tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -412,7 +412,7 @@ public class MainFragment extends Fragment implements TMapGpsManager.onLocationC
     public void speakDestination(){
         sRecognizer.startListening(i);
         speechTextView.setText("음성인식을 시작합니다.");
-//        speakTTS("음성인식을 시작합니다.");
+        speakTTS("음성인식을 시작합니다.");
     }
 
     //음성 인식 리스너

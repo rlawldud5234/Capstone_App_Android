@@ -4,15 +4,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Window;
 
 public class MainActivity extends AppCompatActivity {
     FragmentPagerAdapter adapterViewPager;
+    FragmentManager fm;
+    FragmentTransaction trans;
     ViewPager vpPager;
+    static String value;
     static boolean checkFirst;
 
     @Override
@@ -21,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        fm = getSupportFragmentManager();
+        trans = fm.beginTransaction();
         vpPager = (ViewPager) findViewById(R.id.vpPager);
         adapterViewPager = new MyPagerAdapter(getSupportFragmentManager());
 
@@ -29,29 +36,47 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         checkFirst = intent.getExtras().getBoolean("FirstCheck");
 
+        if(intent.getExtras().getString("button").equals("recog")){
+            value = "object";
+            vpPager.setCurrentItem(1);
+        }
+
         if(intent.getExtras().getString("button").equals("object")){
+            value = "object";
             vpPager.setCurrentItem(1);
         }
 
         if(intent.getExtras().getString("button").equals("color")){
-            vpPager.setCurrentItem(2);
+            value = "color";
+            vpPager.setCurrentItem(1);
         }
 
-        if(intent.getExtras().getString("button").equals("nav")){
-            vpPager.setCurrentItem(3);
+        if(intent.getExtras().getString("button").equals("text")){
+            value = "text";
+            vpPager.setCurrentItem(1);
+
+        }
+
+        if(intent.getExtras().getString("button").equals("light")){
+            value = "light";
+            vpPager.setCurrentItem(1);
+        }
+
+       if(intent.getExtras().getString("button").equals("nav")){
+           value = "nav";
+            vpPager.setCurrentItem(2);
         }
     }
 
 
 
     public static class MyPagerAdapter extends FragmentPagerAdapter {
-        private static int NUM_ITEMS = 4;
+        private static int NUM_ITEMS = 3;
 
         public MyPagerAdapter(FragmentManager fragmentManager) {
             super(fragmentManager);
         }
 
-        // Returns total number of pages
         @Override
         public int getCount() {
             return NUM_ITEMS;
@@ -59,16 +84,26 @@ public class MainActivity extends AppCompatActivity {
 
         // Returns the fragment to display for that page
         @Override
-        public Fragment getItem(int position) {     //메뉴 - 사물인식 - 문자인식 - 색상인식 - 빛 밝기 - 길 찾기
+        public Fragment getItem(int position) {     //메뉴 - 인식 - 길 찾기
             switch (position) {
                 case 0:
                     return LeftFragment.newInstance("0", "Page");   //메뉴
                 case 1:
-                    return ObjectRecognitionFragment.newInstance("1", "page");  //사물인식
+                    Log.e("-------------------", value);
+
+                    if(value.equals("object")) {
+                        return ObjectRecognitionFragment.newInstance("1", "page");
+                    } else if(value.equals("color")) {
+                        return ColorRecognitionFragment.newInstance("1", "page");
+                    } else if(value.equals("text")) {
+                        return CharacterRecognitionFragment.newInstance("1", "page");
+                    } else if(value.equals("light")){
+                        return BrightnessFragment.newInstance("1", "page");
+                    } else {
+                        return ObjectRecognitionFragment.newInstance("1", "page");  //인식
+                    }
                 case 2:
-                    return ColorRecognitionFragment.newInstance("2", "page");   //색상인식
-                case 3:
-                    return MainFragment.newInstance("3", String.valueOf(checkFirst));   //길찾기
+                    return MainFragment.newInstance("2", String.valueOf(checkFirst));   //길찾기
                 default:
                     return null;
             }

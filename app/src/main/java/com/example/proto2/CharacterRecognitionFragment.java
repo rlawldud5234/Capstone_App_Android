@@ -1,12 +1,11 @@
 package com.example.proto2;
 
-
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
@@ -30,22 +29,17 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
-
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
-import android.renderscript.Sampler;
+import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -55,29 +49,36 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+
+import com.googlecode.tesseract.android.TessBaseAPI;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
+import static android.app.Activity.RESULT_OK;
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Looper.getMainLooper;
 import static androidx.constraintlayout.widget.Constraints.TAG;
 
 
-public class ColorRecognitionFragment extends Fragment {
+public class CharacterRecognitionFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+
+    private String mParam1;
+    private String mParam2;
 
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceViewHolder;
@@ -107,6 +108,11 @@ public class ColorRecognitionFragment extends Fragment {
     private String mCameraId;
     private int mState = STATE_PREVIEW;
 
+    TextToSpeech tts;
+
+    TessBaseAPI tess;
+    String dataPath = "";
+
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
         ORIENTATIONS.append(ExifInterface.ORIENTATION_NORMAL, 0);
@@ -116,8 +122,8 @@ public class ColorRecognitionFragment extends Fragment {
     }
 
 
-    public static ColorRecognitionFragment newInstance(String param1, String param2) {
-        ColorRecognitionFragment fragment = new ColorRecognitionFragment();
+    public static CharacterRecognitionFragment newInstance(String param1, String param2) {
+        CharacterRecognitionFragment fragment = new CharacterRecognitionFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -125,116 +131,23 @@ public class ColorRecognitionFragment extends Fragment {
         return fragment;
     }
 
-    private CameraCaptureSession.CaptureCallback mCaptureCallback
-            = new CameraCaptureSession.CaptureCallback() {
-
-        private void process(CaptureResult result) {
-            switch (mState) {
-                case STATE_PREVIEW: {
-                    // We have nothing to do when the camera preview is working normally.
-                    break;
-                }
-                case STATE_WAITING_LOCK: {
-                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
-                        captureStillPicture();
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        // CONTROL_AE_STATE can be null on some devices
-                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null ||
-                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                            mState = STATE_PICTURE_TAKEN;
-                            captureStillPicture();
-                        } else {
-                            runPrecaptureSequence();
-                        }
-                    }
-                    break;
-                }
-                case STATE_WAITING_PRECAPTURE: {
-                    // CONTROL_AE_STATE can be null on some devices
-                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                    if (aeState == null ||
-                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
-                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
-                        mState = STATE_WAITING_NON_PRECAPTURE;
-                    }
-                    break;
-                }
-                case STATE_WAITING_NON_PRECAPTURE: {
-                    // CONTROL_AE_STATE can be null on some devices
-                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
-                        mState = STATE_PICTURE_TAKEN;
-                        captureStillPicture();
-                    }
-                    break;
-                }
-            }
-        }
-
-        @Override
-        public void onCaptureProgressed(@NonNull CameraCaptureSession session,
-                                        @NonNull CaptureRequest request,
-                                        @NonNull CaptureResult partialResult) {
-            process(partialResult);
-        }
-
-        @Override
-        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                                       @NonNull CaptureRequest request,
-                                       @NonNull TotalCaptureResult result) {
-            process(result);
-        }
-
-    };
-
-    public void initCameraAndPreview() {
-        HandlerThread handlerThread = new HandlerThread("CAMERA2");
-        handlerThread.start();
-        mHandler = new Handler(handlerThread.getLooper());
-        Handler mainHandler = new Handler(getMainLooper());
-        try {
-            String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
-            this.mCameraId = mCameraId;
-
-            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-
-            maximumZoomLevel = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
-            Log.i("maxZoomLevel", maximumZoomLevel+"");
-
-
-            Size largestPreviewSize = map.getOutputSizes(ImageFormat.JPEG)[0];
-            Log.i("LargestSize", largestPreviewSize.getWidth() + " " + largestPreviewSize.getHeight());
-
-            setAspectRatioTextureView(largestPreviewSize.getHeight(),largestPreviewSize.getWidth());
-
-            mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
-            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
-
-            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
-
-        } catch (CameraAccessException e) {
-            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //TTS 설정
+        tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                tts.setLanguage(Locale.KOREA);
+            }
+        });
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_color_recognition, container, false);
+        View view = inflater.inflate(R.layout.fragment_character_recognition, container, false);
 
-        ImageButton button = view.findViewById(R.id.col_take_photo);
+        ImageButton button = view.findViewById(R.id.char_take_photo);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -242,13 +155,13 @@ public class ColorRecognitionFragment extends Fragment {
             }
         });
 
-        mSurfaceView = view.findViewById(R.id.col_surfaceView);
+        mSurfaceView = view.findViewById(R.id.char_surfaceView);
         mSensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         deviceOrientation = new DeviceOrientation();
 
-        zoomSeekBar = (SeekBar)view.findViewById(R.id.col_zoomSeekBar);
+        zoomSeekBar = (SeekBar)view.findViewById(R.id.char_zoomSeekBar);
         zoomSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -303,7 +216,23 @@ public class ColorRecognitionFragment extends Fragment {
 
         initSurfaceView();
 
+        dataPath = getActivity().getFilesDir() + "/tesseract/";
+
+        checkFile(new File(dataPath + "tessdata/"), "kor");
+        checkFile(new File(dataPath + "tessdata/"), "eng");
+        checkFile(new File(dataPath + "tessdata/"), "jpn");
+
+        String lang = "kor+eng+jpn";
+        tess = new TessBaseAPI();
+        tess.init(dataPath, lang);
+
         return view;
+    }
+
+    public void processImage(Bitmap bitmap){
+        tess.setImage(bitmap);
+        String result = tess.getUTF8Text();
+        speakTTS(result);
     }
 
     @Override
@@ -318,6 +247,7 @@ public class ColorRecognitionFragment extends Fragment {
     public void onPause() {
         super.onPause();
 
+        mSurfaceView.setVisibility(View.GONE);
         mSensorManager.unregisterListener(deviceOrientation.getEventListener());
 
         if (null != mSession) {
@@ -331,6 +261,151 @@ public class ColorRecognitionFragment extends Fragment {
         if (null != mImageReader) {
             mImageReader.close();
             mImageReader = null;
+        }
+    }
+
+    //TTS 말하기
+    public void speakTTS(String sentence) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            String utteranceId=this.hashCode() + "";
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+        } else {
+            HashMap<String, String> hashmap = new HashMap<>();
+            hashmap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "MessageId");
+            tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, hashmap);
+        }
+    }
+
+    private void copyFiles(String lang){
+        try{
+            String filepath = dataPath + "/tessdata/" + lang + ".traineddata";
+
+            AssetManager assetManager = getActivity().getAssets();
+
+            InputStream inStream = assetManager.open("tessdata/"+lang+".traineddata");
+            OutputStream outStream = new FileOutputStream(filepath);
+
+            byte[] buffer = new byte[1024];
+            int read;
+            while((read = inStream.read(buffer)) != -1 ){
+                outStream.write(buffer, 0, read);
+            }
+            outStream.flush();
+            outStream.close();
+            inStream.close();
+
+
+        }catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void checkFile(File dir, String lang) {
+        if(!dir.exists()&&dir.mkdirs()) {
+            copyFiles(lang);
+        }
+        if(dir.exists()) {
+            String datafilePath = dataPath + "/tessdata/" + lang + ".traineddata";
+            File datafile = new File(datafilePath);
+            if(!datafile.exists()) {
+                copyFiles(lang);
+            }
+        }
+    }
+
+    private CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+        private void process(CaptureResult result) {
+            switch (mState) {
+                case STATE_PREVIEW: {
+                    // We have nothing to do when the camera preview is working normally.
+                    break;
+                }
+                case STATE_WAITING_LOCK: {
+                    Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                    if (afState == null) {
+                        captureStillPicture();
+                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                        // CONTROL_AE_STATE can be null on some devices
+                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                        if (aeState == null ||
+                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                            mState = STATE_PICTURE_TAKEN;
+                            captureStillPicture();
+                        } else {
+                            runPrecaptureSequence();
+                        }
+                    }
+                    break;
+                }
+                case STATE_WAITING_PRECAPTURE: {
+                    // CONTROL_AE_STATE can be null on some devices
+                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == null ||
+                            aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                            aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                        mState = STATE_WAITING_NON_PRECAPTURE;
+                    }
+                    break;
+                }
+                case STATE_WAITING_NON_PRECAPTURE: {
+                    // CONTROL_AE_STATE can be null on some devices
+                    Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                        mState = STATE_PICTURE_TAKEN;
+                        captureStillPicture();
+                    }
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public void onCaptureProgressed(@NonNull CameraCaptureSession session,@NonNull CaptureRequest request,@NonNull CaptureResult partialResult) {
+            process(partialResult);
+        }
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session,@NonNull CaptureRequest request,@NonNull TotalCaptureResult result) {
+            process(result);
+        }
+
+    };
+
+    public void initCameraAndPreview() {
+        HandlerThread handlerThread = new HandlerThread("CAMERA2");
+        handlerThread.start();
+        mHandler = new Handler(handlerThread.getLooper());
+        Handler mainHandler = new Handler(getMainLooper());
+        try {
+            String mCameraId = "" + CameraCharacteristics.LENS_FACING_FRONT; // 후면 카메라 사용
+            this.mCameraId = mCameraId;
+
+            CameraManager mCameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+            maximumZoomLevel = (characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
+            Log.i("maxZoomLevel", maximumZoomLevel+"");
+
+
+            Size largestPreviewSize = map.getOutputSizes(ImageFormat.JPEG)[0];
+            Log.i("LargestSize", largestPreviewSize.getWidth() + " " + largestPreviewSize.getHeight());
+
+            setAspectRatioTextureView(largestPreviewSize.getHeight(),largestPreviewSize.getWidth());
+
+            mImageReader = ImageReader.newInstance(largestPreviewSize.getWidth(), largestPreviewSize.getHeight(), ImageFormat.JPEG,/*maxImages*/7);
+            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mainHandler);
+
+            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            mCameraManager.openCamera(mCameraId, deviceStateCallback, mHandler);
+
+        } catch (CameraAccessException e) {
+            Toast.makeText(getContext(), "카메라를 열지 못했습니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -373,17 +448,11 @@ public class ColorRecognitionFragment extends Fragment {
                 return;
             }
             // This is the CaptureRequest.Builder that we use to take a picture.
-            final CaptureRequest.Builder captureBuilder =
-                    mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
 
             // Use the same AE and AF modes as the preview.
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-
-            // Orientation
-//            int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-//            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
-
 
             if (zoom != null) {
                 captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
@@ -409,13 +478,14 @@ public class ColorRecognitionFragment extends Fragment {
     private ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
         public void onImageAvailable(ImageReader reader) {
-
             Image image = reader.acquireNextImage();
             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
             final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
             new SaveImageTask().execute(bitmap);
+            speakTTS("이미지 리더");
         }
     };
 
@@ -470,7 +540,6 @@ public class ColorRecognitionFragment extends Fragment {
             mSession = session;
 
             try {
-
                 mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                 mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                 mSession.setRepeatingRequest(mPreviewBuilder.build(), null, mHandler);
@@ -504,6 +573,7 @@ public class ColorRecognitionFragment extends Fragment {
     };
 
     public void takePicture() {
+        speakTTS("찰칵");
 
         try {
             CaptureRequest.Builder captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -511,15 +581,13 @@ public class ColorRecognitionFragment extends Fragment {
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
-
-            // 화면 회전 안되게 고정시켜 놓은 상태에서는 아래 로직으로 방향을 얻을 수 없어서 센서를 사용하는 것으로 변경
-            //deviceRotation = getResources().getConfiguration().orientation;
             mDeviceRotation = ORIENTATIONS.get(deviceOrientation.getOrientation());
-            Log.d("@@@", mDeviceRotation+"");
+            Log.d("@@@----", mDeviceRotation+"");
 
             captureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, mDeviceRotation);
             CaptureRequest mCaptureRequest = captureRequestBuilder.build();
             mSession.capture(mCaptureRequest, mSessionCaptureCallback, mHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -535,10 +603,6 @@ public class ColorRecognitionFragment extends Fragment {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
-    /**
-     * Unlock the focus. This method should be called when still image capture sequence is
-     * finished.
-     */
     private void unlockFocus() {
         try {
             // Reset the auto-focus trigger
@@ -556,14 +620,13 @@ public class ColorRecognitionFragment extends Fragment {
         }
     }
 
-
     public static final String insertImage(ContentResolver cr, Bitmap source, String title, String description) {
-
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, title);
         values.put(MediaStore.Images.Media.DISPLAY_NAME, title);
         values.put(MediaStore.Images.Media.DESCRIPTION, description);
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+
         // Add the date meta data to ensure the image is added at the front of the gallery
         values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis());
         values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
@@ -578,6 +641,7 @@ public class ColorRecognitionFragment extends Fragment {
                 OutputStream imageOut = cr.openOutputStream(url);
                 try {
                     source.compress(Bitmap.CompressFormat.JPEG, 50, imageOut);
+
                 } finally {
                     imageOut.close();
                 }
@@ -597,49 +661,36 @@ public class ColorRecognitionFragment extends Fragment {
             stringUrl = url.toString();
         }
 
+        Log.e("----url----", stringUrl);    //content://media/external/images/media/xxx
         return stringUrl;
     }
-
 
     private class SaveImageTask extends AsyncTask<Bitmap, Void, Void> {
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-
-            Toast.makeText(getContext(), "사진을 저장하였습니다.", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
         protected Void doInBackground(Bitmap... data) {
-
             Bitmap bitmap = null;
+            speakTTS("백그라운드");
+
             try {
+                speakTTS("인식 중");
                 bitmap = getRotatedBitmap(data[0], mDeviceRotation);
+
             } catch (Exception e) {
                 e.printStackTrace();
+                speakTTS("에러");
             }
             insertImage(getActivity().getContentResolver(), bitmap, ""+System.currentTimeMillis(), "");
 
-            String postUrl= "http://54.180.91.200:5000/";
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            try{
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                Log.d("----:MagnifyingActivity", "사진사진사진");
-            }catch (Exception e){
-                Log.d("----:MagnifyingActivity", "요청요청"+e.getMessage());
-            }
-            byte[] byteArray = stream.toByteArray();
-
-            RequestBody postBodyImage = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("image", "androidFlask.jpg", RequestBody.create(MediaType.parse("image/*jpg"), byteArray))
-                    .build();
-
-            postRequest(postUrl, postBodyImage);
             return null;
         }
 
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Toast.makeText(getContext(), "사진을 저장하였습니다.", Toast.LENGTH_SHORT).show();
+            speakTTS("사진 저장");
+        }
     }
 
     private void setAspectRatioTextureView(int ResolutionWidth , int ResolutionHeight )
@@ -661,65 +712,4 @@ public class ColorRecognitionFragment extends Fragment {
         Log.d("@@@", "TextureView Width : " + viewWidth + " TextureView Height : " + viewHeight);
         mSurfaceView.setLayoutParams(new FrameLayout.LayoutParams(viewWidth, viewHeight));
     }
-    void postRequest(String postUrl, RequestBody postBody) {
-
-        OkHttpClient client = new OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url(postUrl)
-                .post(postBody)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                // Cancel the post on failure.
-                Log.d("----:MagnifyingActivity", "콜백오류:"+e.getMessage());
-                call.cancel();
-
-                // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-                // In order to access the TextView inside the UI thread, the code is executed inside runOnUiThread()
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String text = response.body().string();
-                            Log.d("----:return", "return: "+text);
-                        }catch (IOException e){
-                            e.getMessage();
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-    public String getPath(Uri uri) {
-        Cursor cursor = null;
-        String result;
-//        String[] filePathColumn = {MediaStore.Images.Media.DATA};
-        try {
-            cursor = getActivity().getContentResolver().query(uri, null, null, null,
-                    null);
-            if (cursor != null && cursor.moveToFirst()) {
-                int column_index = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-                result = cursor.getString(column_index);
-                return cursor.getString(column_index);
-            }
-        } finally {
-            if (cursor != null)
-                cursor.close();
-        }
-        return null;
-    }
-
 }

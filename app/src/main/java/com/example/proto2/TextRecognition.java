@@ -316,22 +316,6 @@ public class TextRecognition extends AppCompatActivity {
                 Bitmap bitmap = bitmapDrawable.getBitmap();
                 processImage(bitmap);
 
-//                TextRecognizer recognizer = new TextRecognizer.Builder(getApplicationContext()).build();
-//
-//                if (!recognizer.isOperational()) {
-//                    Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
-//                } else {
-//                    Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-//                    SparseArray<TextBlock> items = recognizer.detect(frame);
-//                    StringBuilder sb = new StringBuilder();
-//
-//                    for (int i = 0; i < items.size(); i++) {
-//                        TextBlock myItem = items.valueAt(i);
-//                        sb.append(myItem.getValue());
-//                        sb.append("\n");
-//                    }
-//                    mResultEt.setText(sb.toString());
-//                }
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                 Exception error = result.getError();
                 Toast.makeText(this, "" + error, Toast.LENGTH_SHORT).show();
