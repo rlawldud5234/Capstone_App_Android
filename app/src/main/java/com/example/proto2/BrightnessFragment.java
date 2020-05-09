@@ -57,6 +57,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Looper.getMainLooper;
 
 
@@ -111,10 +112,23 @@ public class BrightnessFragment extends Fragment implements SensorEventListener 
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_brightness, container, false);
+        sensorManager = (SensorManager)getActivity().getSystemService(Context.SENSOR_SERVICE);
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        if(lightSensor == null){
+            Toast.makeText(getContext(), "빛센서를 찾을 수 없습니다!", Toast.LENGTH_SHORT).show();
+        }
+        tvLight = view.findViewById(R.id.tvLight);
+        mSurfaceView = view.findViewById(R.id.svLight);
+        mSensorManager = (SensorManager) getActivity().getSystemService(SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        deviceOrientation = new DeviceOrientation();
 
-        return inflater.inflate(R.layout.fragment_brightness, container, false);
+        initSurfaceView();
+
+        return view;
     }
 
     @Override

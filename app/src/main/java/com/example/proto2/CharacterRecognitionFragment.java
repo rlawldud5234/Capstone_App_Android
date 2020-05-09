@@ -233,6 +233,7 @@ public class CharacterRecognitionFragment extends Fragment {
         tess.setImage(bitmap);
         String result = tess.getUTF8Text();
         speakTTS(result);
+        Log.e("-----", result);
     }
 
     @Override
@@ -669,9 +670,9 @@ public class CharacterRecognitionFragment extends Fragment {
 
         @Override
         protected Void doInBackground(Bitmap... data) {
-            Bitmap bitmap = null;
             speakTTS("백그라운드");
 
+            Bitmap bitmap = null;
             try {
                 speakTTS("인식 중");
                 bitmap = getRotatedBitmap(data[0], mDeviceRotation);
@@ -681,6 +682,17 @@ public class CharacterRecognitionFragment extends Fragment {
                 speakTTS("에러");
             }
             insertImage(getActivity().getContentResolver(), bitmap, ""+System.currentTimeMillis(), "");
+
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+            try{
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                processImage(bitmap);
+                Log.d("----:MagnifyingActivity", "분석 중");
+            }catch (Exception e){
+                Log.d("----:MagnifyingActivity", "요청요청"+e.getMessage());
+                speakTTS("에러 발생");
+            }
 
             return null;
         }
